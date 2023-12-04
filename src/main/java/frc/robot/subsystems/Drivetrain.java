@@ -1,0 +1,164 @@
+package frc.robot.subsystems;
+
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.lib.Navx;
+import frc.robot.lib.swervelib.*;
+import frc.robot.lib.swervelib.ctre.TalonFXDriveConfiguration;
+import frc.robot.lib.swervelib.ctre.TalonFXSteerConfiguration;
+
+import com.kauailabs.navx.frc.AHRS;
+
+public class Drivetrain extends SubsystemBase {
+
+    private static final double FRONT_SIDE_M = .415;
+    private static final double RIGHT_SIDE_M = .596;
+    private static final double BACK_SIDE_M = .420;
+    private static final double LEFT_SIDE_M = .594;
+
+    private static final double FRONT_RIGHT_MODULE_X_M = FRONT_SIDE_M / 2;
+    private static final double FRONT_RIGHT_MODULE_Y_M = -RIGHT_SIDE_M / 2;
+
+    private static final double FRONT_LEFT_MODULE_X_M = FRONT_SIDE_M / 2;
+    private static final double FRONT_LEFT_MODULE_Y_M = LEFT_SIDE_M / 2;
+
+    private static final double BACK_RIGHT_MODULE_X_M = -BACK_SIDE_M / 2;
+    private static final double BACK_RIGHT_MODULE_Y_M = -RIGHT_SIDE_M / 2;
+
+    private static final double BACK_LEFT_MODULE_X_M = -BACK_SIDE_M / 2;
+    private static final double BACK_LEFT_MODULE_Y_M = LEFT_SIDE_M / 2;
+
+    private static final double STEERPOS_P = .75;
+    private static final double STEERPOS_I = 0;
+    private static final double STEERPOS_D = 2;
+
+    private static final double MAX_SPEED_MS = 4.786;
+
+    // CAN IDs
+    private static final int FRONT_LEFT_MODULE_DRIVE_MOTOR_ID = 3;
+    private static final int FRONT_LEFT_MODULE_STEER_MOTOR_ID = 7;
+    private static final int FRONT_LEFT_MODULE_STEER_ENCODER_ID = 9;
+    private static final DiscreetAngle FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(63.38);
+
+    private static final int FRONT_RIGHT_MODULE_DRIVE_MOTOR_ID = 1;
+    private static final int FRONT_RIGHT_MODULE_STEER_MOTOR_ID = 5;
+    private static final int FRONT_RIGHT_MODULE_STEER_ENCODER_ID = 12;
+    private static final DiscreetAngle FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(13.65);
+
+    private static final int BACK_LEFT_MODULE_DRIVE_MOTOR_ID = 2;
+    private static final int BACK_LEFT_MODULE_STEER_MOTOR_ID = 8;
+    private static final int BACK_LEFT_MODULE_STEER_ENCODER_ID = 11;
+    private static final DiscreetAngle BACK_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(352.79);
+
+    private static final int BACK_RIGHT_MODULE_DRIVE_MOTOR_ID = 6;
+    private static final int BACK_RIGHT_MODULE_STEER_MOTOR_ID = 4;
+    private static final int BACK_RIGHT_MODULE_STEER_ENCODER_ID = 0;
+    private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(212.69);
+
+    private static final SwerveDriveKinematics KINEMATICS = new SwerveDriveKinematics(
+            // Front left
+            new Translation2d(FRONT_LEFT_MODULE_X_M, FRONT_LEFT_MODULE_Y_M),
+            // Front right
+            new Translation2d(FRONT_RIGHT_MODULE_X_M, FRONT_RIGHT_MODULE_Y_M),
+            // Back left
+            new Translation2d(BACK_LEFT_MODULE_X_M, BACK_LEFT_MODULE_Y_M),
+            // Back right
+            new Translation2d(BACK_RIGHT_MODULE_X_M, BACK_RIGHT_MODULE_Y_M));
+
+    private final AHRS m_navx = Navx.newReadyNavx(); // NavX connected over MXP
+
+    private final SwerveDrive swerveDrive = new SwerveDrive(
+        new SwerveModuleConfiguration( 
+            FRONT_LEFT_MODULE_DRIVE_MOTOR_ID,
+            FRONT_LEFT_MODULE_STEER_MOTOR_ID, 
+            FRONT_LEFT_MODULE_STEER_ENCODER_ID, 
+            FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE
+        ), 
+        new SwerveModuleConfiguration( 
+            FRONT_RIGHT_MODULE_DRIVE_MOTOR_ID, 
+            FRONT_RIGHT_MODULE_STEER_MOTOR_ID,
+            FRONT_RIGHT_MODULE_STEER_ENCODER_ID, 
+            FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE
+        ), 
+        new SwerveModuleConfiguration( 
+            BACK_LEFT_MODULE_DRIVE_MOTOR_ID,
+            BACK_LEFT_MODULE_STEER_MOTOR_ID, 
+            BACK_LEFT_MODULE_STEER_ENCODER_ID,
+            BACK_LEFT_MODULE_STEER_ALIGN_ANGLE
+        ), 
+        new SwerveModuleConfiguration(
+            BACK_RIGHT_MODULE_DRIVE_MOTOR_ID,
+            BACK_RIGHT_MODULE_STEER_MOTOR_ID,  
+            BACK_RIGHT_MODULE_STEER_ENCODER_ID, 
+            BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE
+        ), 
+        SdsGearRatios.MK4_L1,
+        new TalonFXDriveConfiguration(),
+        new TalonFXSteerConfiguration()
+            .withPidConstants(STEERPOS_P, STEERPOS_I, STEERPOS_D), 
+        new CANCoderAbsoluteEncoderConfiguration(),
+        new SwerveDriveConfiguration(
+            MAX_SPEED_MS, 
+            KINEMATICS, 
+            () -> getGyroscopeRotation()
+        )
+    );
+
+    private final XboxController m_gamepad;
+
+    public Drivetrain(XboxController gamepad) {
+        m_gamepad = gamepad;
+        setDefaultCommand(drive());
+
+        for(var location : ModuleLocation.values()) {
+            setModuleTelemetry(location);
+        }
+    }
+
+    private static final ShuffleboardTab MODULE_TAB = Shuffleboard.getTab("Module informations");
+
+    private void setModuleTelemetry(ModuleLocation module) {
+        ShuffleboardLayout layout = MODULE_TAB.getLayout(module.name + " module", BuiltInLayouts.kList)
+            .withSize(2, 4)
+            .withPosition(module.index * 2, 0);
+            
+        layout.addDouble("Drive speed MS", () -> swerveDrive.getDriveSpeedMS(module));
+        layout.addDouble("Drive reference speed MS", () -> swerveDrive.getReferenceSpeedMS(module));
+        layout.addDouble("Steer angle", () -> swerveDrive.getSteerAngle(module).degrees());
+        layout.addDouble("Steer reference angle", () -> swerveDrive.getSteerReferenceAngle(module).degrees());
+        layout.addDouble("Drive position ticks", () -> swerveDrive.getDrivePositionNativeUnits(module));
+    }
+
+    /**
+     * Retourne l'angle du Gyromètre dans l'intervalle [0, 360]
+     */
+    private Rotation2d getGyroscopeRotation() {
+        return Rotation2d.fromDegrees(360 - m_navx.getFusedHeading());
+    }
+
+    public Command drive() {
+       return run(() -> {
+            swerveDrive.setOpenLoopSpeed(
+                ChassisSpeeds.fromFieldRelativeSpeeds(
+                    m_gamepad.getLeftX() * MAX_SPEED_MS,
+                    -m_gamepad.getLeftY() * MAX_SPEED_MS,
+                    -m_gamepad.getRightX() * MAX_SPEED_MS,
+                    getGyroscopeRotation()));
+        })
+            .andThen(() -> swerveDrive.stop());
+    }
+
+    @Override
+    public void periodic() {
+        swerveDrive.periodic();
+    }
+}
