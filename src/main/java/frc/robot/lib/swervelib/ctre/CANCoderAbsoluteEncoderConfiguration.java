@@ -2,7 +2,9 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.lib.swervelib;
+package frc.robot.lib.swervelib.ctre;
+
+import frc.robot.lib.swervelib.AbsoluteEncoderConfiguration;
 
 /** Add your docs here. */
 public class CANCoderAbsoluteEncoderConfiguration implements AbsoluteEncoderConfiguration{

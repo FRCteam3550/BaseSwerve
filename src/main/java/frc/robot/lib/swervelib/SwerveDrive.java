@@ -8,6 +8,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import frc.robot.lib.swervelib.ctre.CANCoderAbsoluteEncoder;
+import frc.robot.lib.swervelib.ctre.CANCoderAbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXDriveConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXDriveController;
 import frc.robot.lib.swervelib.ctre.TalonFXSteerConfiguration;

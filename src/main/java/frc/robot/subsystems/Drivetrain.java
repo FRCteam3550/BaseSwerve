@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -11,8 +10,10 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.lib.Navx;
 import frc.robot.lib.swervelib.*;
+import frc.robot.lib.swervelib.ctre.CANCoderAbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXDriveConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXSteerConfiguration;
 
@@ -64,6 +65,25 @@ public class Drivetrain extends SubsystemBase {
     private static final int BACK_RIGHT_MODULE_STEER_ENCODER_ID = 0;
     private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(212.69);
 
+    // FIXME Measure the drivetrain's maximum velocity or calculate the theoretical.
+    // The formula for calculating the theoretical maximum velocity is:
+    // <Motor free speed RPM> / 60 * <Drive reduction> * <Wheel diameter meters> *
+    // pi
+    // By default this value is setup for a Mk3 standard module using Falcon500s to
+    // drive.
+    // An example of this constant for a Mk4 L2 module with NEOs to drive is:
+    // 5880.0 / 60.0 / SdsModuleConfigurations.MK4_L2.getDriveReduction() *
+    // SdsModuleConfigurations.MK4_L2.getWheelDiameter() * Math.PI
+    /**
+     * The maximum angular velocity of the robot in radians per second.
+     * <p>
+     * This is a measure of how fast the robot can rotate in place.
+     */
+    // Here we calculate the theoretical maximum angular velocity. You can also
+    // replace this with a measured amount.
+    private static final double MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND = MAX_SPEED_MS
+            / Math.hypot(FRONT_SIDE_M, RIGHT_SIDE_M);
+
     private static final SwerveDriveKinematics KINEMATICS = new SwerveDriveKinematics(
             // Front left
             new Translation2d(FRONT_LEFT_MODULE_X_M, FRONT_LEFT_MODULE_Y_M),
@@ -74,7 +94,7 @@ public class Drivetrain extends SubsystemBase {
             // Back right
             new Translation2d(BACK_RIGHT_MODULE_X_M, BACK_RIGHT_MODULE_Y_M));
 
-    private final AHRS m_navx = Navx.newReadyNavx(); // NavX connected over MXP
+    private final AHRS navx = Navx.newReadyNavx(); // NavX connected over MXP
 
     private final SwerveDrive swerveDrive = new SwerveDrive(
         new SwerveModuleConfiguration( 
@@ -113,10 +133,10 @@ public class Drivetrain extends SubsystemBase {
         )
     );
 
-    private final XboxController m_gamepad;
+    private final CommandXboxController gamepad;
 
-    public Drivetrain(XboxController gamepad) {
-        m_gamepad = gamepad;
+    public Drivetrain(CommandXboxController gamepad) {
+        this.gamepad = gamepad;
         setDefaultCommand(drive());
 
         for(var location : ModuleLocation.values()) {
@@ -124,7 +144,7 @@ public class Drivetrain extends SubsystemBase {
         }
     }
 
-    private static final ShuffleboardTab MODULE_TAB = Shuffleboard.getTab("Module informations");
+    private static final ShuffleboardTab MODULE_TAB = Shuffleboard.getTab("Modules states");
 
     private void setModuleTelemetry(ModuleLocation module) {
         ShuffleboardLayout layout = MODULE_TAB.getLayout(module.name + " module", BuiltInLayouts.kList)
@@ -132,7 +152,6 @@ public class Drivetrain extends SubsystemBase {
             .withPosition(module.index * 2, 0);
             
         layout.addDouble("Drive speed MS", () -> swerveDrive.getDriveSpeedMS(module));
-        layout.addDouble("Drive reference speed MS", () -> swerveDrive.getReferenceSpeedMS(module));
         layout.addDouble("Steer angle", () -> swerveDrive.getSteerAngle(module).degrees());
         layout.addDouble("Steer reference angle", () -> swerveDrive.getSteerReferenceAngle(module).degrees());
         layout.addDouble("Drive position ticks", () -> swerveDrive.getDrivePositionNativeUnits(module));
@@ -142,16 +161,16 @@ public class Drivetrain extends SubsystemBase {
      * Retourne l'angle du Gyromètre dans l'intervalle [0, 360]
      */
     private Rotation2d getGyroscopeRotation() {
-        return Rotation2d.fromDegrees(360 - m_navx.getFusedHeading());
+        return Rotation2d.fromDegrees(360 - navx.getFusedHeading());
     }
 
     public Command drive() {
        return run(() -> {
             swerveDrive.setOpenLoopSpeed(
                 ChassisSpeeds.fromFieldRelativeSpeeds(
-                    m_gamepad.getLeftX() * MAX_SPEED_MS,
-                    -m_gamepad.getLeftY() * MAX_SPEED_MS,
-                    -m_gamepad.getRightX() * MAX_SPEED_MS,
+                    gamepad.getLeftX() * MAX_SPEED_MS,
+                    -gamepad.getLeftY() * MAX_SPEED_MS,
+                    -gamepad.getRightX() * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
                     getGyroscopeRotation()));
         })
             .andThen(() -> swerveDrive.stop());
