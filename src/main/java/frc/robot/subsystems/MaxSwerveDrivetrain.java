@@ -4,6 +4,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
@@ -12,19 +13,24 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.lib.Navx;
-import frc.robot.lib.swervelib.*;
-import frc.robot.lib.swervelib.ctre.CANCoderAbsoluteEncoderConfiguration;
-import frc.robot.lib.swervelib.ctre.TalonFXDriveConfiguration;
-import frc.robot.lib.swervelib.ctre.TalonFXSteerConfiguration;
+import frc.robot.lib.swervelib.DiscreetAngle;
+import frc.robot.lib.swervelib.ModuleLocation;
+import frc.robot.lib.swervelib.RevGearRatios;
+import frc.robot.lib.swervelib.SwerveDrive;
+import frc.robot.lib.swervelib.SwerveDriveConfiguration;
+import frc.robot.lib.swervelib.SwerveModuleConfiguration;
+import frc.robot.lib.swervelib.rev.SparkMaxAbsoluteEncoderConfiguration;
+import frc.robot.lib.swervelib.rev.SparkMaxDriveConfiguration;
+import frc.robot.lib.swervelib.rev.SparkMaxSteerConfiguration;
 
 import com.kauailabs.navx.frc.AHRS;
 
-public class Drivetrain extends SubsystemBase {
+public class MaxSwerveDrivetrain extends SubsystemBase {
 
-    private static final double FRONT_SIDE_M = .415;
-    private static final double RIGHT_SIDE_M = .596;
-    private static final double BACK_SIDE_M = .420;
-    private static final double LEFT_SIDE_M = .594;
+    private static final double FRONT_SIDE_M = .47;
+    private static final double RIGHT_SIDE_M = .47;
+    private static final double BACK_SIDE_M = .47;
+    private static final double LEFT_SIDE_M = .47;
 
     private static final double FRONT_RIGHT_MODULE_X_M = FRONT_SIDE_M / 2;
     private static final double FRONT_RIGHT_MODULE_Y_M = -RIGHT_SIDE_M / 2;
@@ -38,42 +44,33 @@ public class Drivetrain extends SubsystemBase {
     private static final double BACK_LEFT_MODULE_X_M = -BACK_SIDE_M / 2;
     private static final double BACK_LEFT_MODULE_Y_M = LEFT_SIDE_M / 2;
 
-    private static final double STEERPOS_P = .75;
+    private static final double STEERPOS_P = .08;
     private static final double STEERPOS_I = 0;
-    private static final double STEERPOS_D = 2;
+    private static final double STEERPOS_D = 0.2;
 
-    private static final double MAX_SPEED_MS = 4.786;
+    private static final double MAX_SPEED_MS = 0.001;
 
     // CAN IDs
-    private static final int FRONT_LEFT_MODULE_DRIVE_MOTOR_ID = 3;
-    private static final int FRONT_LEFT_MODULE_STEER_MOTOR_ID = 7;
-    private static final int FRONT_LEFT_MODULE_STEER_ENCODER_ID = 9;
-    private static final DiscreetAngle FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(63.38);
+    private static final int FRONT_LEFT_MODULE_DRIVE_MOTOR_ID = 8;
+    private static final int FRONT_LEFT_MODULE_STEER_MOTOR_ID = 6;
+    private static final int FRONT_LEFT_MODULE_STEER_ENCODER_ID = 6;
+    private static final DiscreetAngle FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(45.25+180); // -90
 
-    private static final int FRONT_RIGHT_MODULE_DRIVE_MOTOR_ID = 1;
+    private static final int FRONT_RIGHT_MODULE_DRIVE_MOTOR_ID = 7;
     private static final int FRONT_RIGHT_MODULE_STEER_MOTOR_ID = 5;
-    private static final int FRONT_RIGHT_MODULE_STEER_ENCODER_ID = 12;
-    private static final DiscreetAngle FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(13.65);
+    private static final int FRONT_RIGHT_MODULE_STEER_ENCODER_ID = 5;
+    private static final DiscreetAngle FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(240.5); // 180
 
     private static final int BACK_LEFT_MODULE_DRIVE_MOTOR_ID = 2;
-    private static final int BACK_LEFT_MODULE_STEER_MOTOR_ID = 8;
-    private static final int BACK_LEFT_MODULE_STEER_ENCODER_ID = 11;
-    private static final DiscreetAngle BACK_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(352.79);
+    private static final int BACK_LEFT_MODULE_STEER_MOTOR_ID = 4;
+    private static final int BACK_LEFT_MODULE_STEER_ENCODER_ID = 4;
+    private static final DiscreetAngle BACK_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(59+180); // 180
 
-    private static final int BACK_RIGHT_MODULE_DRIVE_MOTOR_ID = 6;
-    private static final int BACK_RIGHT_MODULE_STEER_MOTOR_ID = 4;
-    private static final int BACK_RIGHT_MODULE_STEER_ENCODER_ID = 0;
-    private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(212.69);
+    private static final int BACK_RIGHT_MODULE_DRIVE_MOTOR_ID = 1;
+    private static final int BACK_RIGHT_MODULE_STEER_MOTOR_ID = 3;
+    private static final int BACK_RIGHT_MODULE_STEER_ENCODER_ID = 3;
+    private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(216); // -90
 
-    // FIXME Measure the drivetrain's maximum velocity or calculate the theoretical.
-    // The formula for calculating the theoretical maximum velocity is:
-    // <Motor free speed RPM> / 60 * <Drive reduction> * <Wheel diameter meters> *
-    // pi
-    // By default this value is setup for a Mk3 standard module using Falcon500s to
-    // drive.
-    // An example of this constant for a Mk4 L2 module with NEOs to drive is:
-    // 5880.0 / 60.0 / SdsModuleConfigurations.MK4_L2.getDriveReduction() *
-    // SdsModuleConfigurations.MK4_L2.getWheelDiameter() * Math.PI
     /**
      * The maximum angular velocity of the robot in radians per second.
      * <p>
@@ -121,11 +118,11 @@ public class Drivetrain extends SubsystemBase {
             BACK_RIGHT_MODULE_STEER_ENCODER_ID, 
             BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE
         ), 
-        SdsGearRatios.MK4_L1,
-        new TalonFXDriveConfiguration(),
-        new TalonFXSteerConfiguration()
+        RevGearRatios.SWERVE_MAX_3IN_HIGH,
+        new SparkMaxDriveConfiguration(),
+        new SparkMaxSteerConfiguration()
             .withPidConstants(STEERPOS_P, STEERPOS_I, STEERPOS_D), 
-        new CANCoderAbsoluteEncoderConfiguration(),
+        new SparkMaxAbsoluteEncoderConfiguration(true),
         new SwerveDriveConfiguration(
             MAX_SPEED_MS, 
             KINEMATICS, 
@@ -135,13 +132,18 @@ public class Drivetrain extends SubsystemBase {
 
     private final CommandXboxController gamepad;
 
-    public Drivetrain(CommandXboxController gamepad) {
+    public MaxSwerveDrivetrain(CommandXboxController gamepad) {
         this.gamepad = gamepad;
         setDefaultCommand(drive());
 
         for(var location : ModuleLocation.values()) {
             setModuleTelemetry(location);
         }
+
+        ShuffleboardLayout layout = MODULE_TAB.getLayout("Drivetrain", BuiltInLayouts.kList)
+            .withSize(2, 4)
+            .withPosition(8, 0);
+        layout.addDouble("Navx angle D", () -> getGyroscopeRotation().getDegrees());
     }
 
     private static final ShuffleboardTab MODULE_TAB = Shuffleboard.getTab("Modules states");
@@ -152,9 +154,12 @@ public class Drivetrain extends SubsystemBase {
             .withPosition(module.index * 2, 0);
             
         layout.addDouble("Drive speed MS", () -> swerveDrive.getDriveSpeedMS(module));
+        layout.addDouble("Open loop speed ref pct", () -> swerveDrive.getOpenLoopReferenceSpeedPct(module));
         layout.addDouble("Steer angle", () -> swerveDrive.getSteerAngle(module).degrees());
         layout.addDouble("Steer reference angle", () -> swerveDrive.getSteerReferenceAngle(module).degrees());
         layout.addDouble("Drive position ticks", () -> swerveDrive.getDrivePositionNativeUnits(module));
+        layout.addDouble("Absolute angle", () -> swerveDrive.getSteerAbsoluteAngle(module).degrees());
+        layout.addDouble("Diff encoder", () -> swerveDrive.getSteerAbsoluteAngle(module).degrees() - swerveDrive.getSteerAngle(module).degrees());
     }
 
     /**
@@ -164,15 +169,30 @@ public class Drivetrain extends SubsystemBase {
         return Rotation2d.fromDegrees(360 - navx.getFusedHeading());
     }
 
+    public double deadband(double val) {
+        if (-0.05 < val && val < 0.05) {
+            return 0;
+        }
+        return val;
+    }
+
     public Command drive() {
        return run(() -> {
-            swerveDrive.setOpenLoopSpeed(
-                ChassisSpeeds.fromFieldRelativeSpeeds(
-                    gamepad.getLeftX() * MAX_SPEED_MS,
-                    -gamepad.getLeftY() * MAX_SPEED_MS,
-                    -gamepad.getRightX() * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
-                    getGyroscopeRotation()));
+            var chassisSpeed = ChassisSpeeds.fromFieldRelativeSpeeds(
+                -deadband(gamepad.getLeftX() * 0.2) * MAX_SPEED_MS,
+                deadband(gamepad.getLeftY() * 0.2) * MAX_SPEED_MS,
+                deadband(gamepad.getRightX()) * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
+                swerveDrive.getEstimatedPositionM().getRotation()
+            );
+
+            swerveDrive.setOpenLoopSpeed(chassisSpeed);
         })
+        .andThen(() -> swerveDrive.stop());
+    }
+
+    public Command setBackRightAngleTo(Rotation2d angle) {
+        return run(() -> swerveDrive.setAngleTo(angle))
+            .withTimeout(1)
             .andThen(() -> swerveDrive.stop());
     }
 

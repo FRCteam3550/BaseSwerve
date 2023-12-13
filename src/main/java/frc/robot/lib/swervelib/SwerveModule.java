@@ -32,8 +32,12 @@ public class SwerveModule {
         return driveController.getSpeedMS();
     }
 
-    public double getReferenceSpeedMS() {
-        return driveController.getReferenceSpeedMS();
+    public double getOpenLoopReferenceSpeedPct() {
+        return driveController.getOpenLoopReferenceSpeedPct();
+    }
+
+    public double getClosedLoopReferenceSpeedMS() {
+        return driveController.getClosedLoopReferenceSpeedMS();
     }
 
     public ContinuousAngle getSteerReferenceAngle() {

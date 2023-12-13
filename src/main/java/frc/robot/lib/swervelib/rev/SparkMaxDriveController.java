@@ -13,11 +13,13 @@ public final class SparkMaxDriveController implements DriveController {
     private final CANSparkMax motor;
     private final SparkMaxPIDController pidController;
     private final RelativeEncoder encoder;
-    private double referenceSpeedMS = 0;
+    private double openLoopReferenceSpeedPct = 0;
+    private double closedLoopReferenceSpeedMS = 0;
     private double metersPerMotorRotation;
 
     public SparkMaxDriveController(int motorCanId, SparkMaxDriveConfiguration configuration, GearRatio gearRatio, double maxSpeedMS) {
         motor = new CANSparkMax(motorCanId, CANSparkMaxLowLevel.MotorType.kBrushless);
+        motor.restoreFactoryDefaults();
         motor.setInverted(gearRatio.driveInverted);
 
         // Setup voltage compensation
@@ -61,16 +63,18 @@ public final class SparkMaxDriveController implements DriveController {
             pidController.setI(configuration.integralConstant);
             pidController.setD(configuration.derivativeConstant);
         }
+        motor.burnFlash();
     }
 
     @Override
     public void setOpenLoopSpeed(double pct) {
+        openLoopReferenceSpeedPct = pct;
         motor.set(pct);
     }
 
     @Override
     public void setClosedLoopSpeed(double speedMS) {
-        referenceSpeedMS = speedMS;
+        closedLoopReferenceSpeedMS = speedMS;
         pidController.setReference(speedMS, ControlType.kVelocity);
     }
 
@@ -90,7 +94,12 @@ public final class SparkMaxDriveController implements DriveController {
     }
 
     @Override
-    public double getReferenceSpeedMS() {
-        return referenceSpeedMS; 
+    public double getOpenLoopReferenceSpeedPct() {
+        return openLoopReferenceSpeedPct; 
+    }
+
+    @Override
+    public double getClosedLoopReferenceSpeedMS() {
+        return closedLoopReferenceSpeedMS; 
     }
 }
