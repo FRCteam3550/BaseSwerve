@@ -1,13 +1,11 @@
 package frc.robot.lib.swervelib.rev;
 
-import frc.robot.lib.swervelib.AbsoluteEncoder;
 import frc.robot.lib.swervelib.SteerConfiguration;
 
 public class SparkMaxSteerConfiguration implements SteerConfiguration{
     private static final double DEFAULT_NOMINAL_VOLTAGE = 12;
     private static final double DEFAULT_CURRENT_LIMIT = 20;
 
-    public final AbsoluteEncoder absoluteEncoder;
     public final double nominalVoltage;
     public final double currentLimit;
     public final double proportionalConstant;
@@ -15,13 +13,11 @@ public class SparkMaxSteerConfiguration implements SteerConfiguration{
     public final double derivativeConstant;
 
     public SparkMaxSteerConfiguration(
-        AbsoluteEncoder absoluteEncoder,
         double nominalVoltage,
         double currentLimit,
         double proportionalConstant,
         double integralConstant,
         double derivativeConstant) {
-        this.absoluteEncoder = absoluteEncoder;
         this.nominalVoltage = nominalVoltage;
         this.currentLimit = currentLimit;
         this.proportionalConstant = proportionalConstant;
@@ -29,9 +25,8 @@ public class SparkMaxSteerConfiguration implements SteerConfiguration{
         this.derivativeConstant = derivativeConstant;
     }
 
-    public SparkMaxSteerConfiguration(AbsoluteEncoder absoluteEncoder) {
+    public SparkMaxSteerConfiguration() {
         this(
-                absoluteEncoder,
                 DEFAULT_NOMINAL_VOLTAGE,
                 DEFAULT_CURRENT_LIMIT,
                 Double.NaN,
@@ -46,7 +41,6 @@ public class SparkMaxSteerConfiguration implements SteerConfiguration{
 
     public SparkMaxSteerConfiguration withVoltageCompensation(double nominalVoltage) {
         return new SparkMaxSteerConfiguration(
-                this.absoluteEncoder,
                 nominalVoltage,
                 this.currentLimit,
                 this.proportionalConstant,
@@ -61,7 +55,6 @@ public class SparkMaxSteerConfiguration implements SteerConfiguration{
 
     public SparkMaxSteerConfiguration withCurrentLimit(double currentLimit) {
         return new SparkMaxSteerConfiguration(
-                this.absoluteEncoder,
                 this.nominalVoltage,
                 currentLimit,
                 this.proportionalConstant,
@@ -72,7 +65,6 @@ public class SparkMaxSteerConfiguration implements SteerConfiguration{
 
     public SparkMaxSteerConfiguration withPidConstants(double proportional, double integral, double derivative) {
         return new SparkMaxSteerConfiguration(
-                this.absoluteEncoder,
                 this.nominalVoltage,
                 this.currentLimit,
                 proportional,

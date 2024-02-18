@@ -19,6 +19,7 @@ public final class TalonFXDriveController implements DriveController {
     private final TalonFX motor;
     private final double sensorVelocityCoefficient;
     private final double metersPerTicks;
+    private double openLoopReferenceSpeedPct = 0;
     private double referenceSpeedMS = 0;
 
     public TalonFXDriveController(int motorCanId, TalonFXDriveConfiguration configuration, GearRatio gearRatio, double maxSpeedMS) {
@@ -75,6 +76,7 @@ public final class TalonFXDriveController implements DriveController {
 
     @Override
     public void setOpenLoopSpeed(double pct) {
+        openLoopReferenceSpeedPct = pct;
         motor.set(TalonFXControlMode.PercentOutput, pct);
     }
 
@@ -100,7 +102,12 @@ public final class TalonFXDriveController implements DriveController {
     }
 
     @Override
-    public double getReferenceSpeedMS() {
+    public double getOpenLoopReferenceSpeedPct() {
+        return openLoopReferenceSpeedPct; 
+    }
+
+    @Override
+    public double getClosedLoopReferenceSpeedMS() {
         return referenceSpeedMS; 
     }
 }

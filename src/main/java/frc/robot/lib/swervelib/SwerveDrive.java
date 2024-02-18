@@ -7,12 +7,15 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.lib.swervelib.ctre.CANCoderAbsoluteEncoder;
 import frc.robot.lib.swervelib.ctre.CANCoderAbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXDriveConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXDriveController;
 import frc.robot.lib.swervelib.ctre.TalonFXSteerConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXSteerController;
+import frc.robot.lib.swervelib.rev.SparkMaxAbsoluteEncoder;
+import frc.robot.lib.swervelib.rev.SparkMaxAbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.rev.SparkMaxDriveConfiguration;
 import frc.robot.lib.swervelib.rev.SparkMaxDriveController;
 import frc.robot.lib.swervelib.rev.SparkMaxSteerConfiguration;
@@ -22,6 +25,7 @@ public class SwerveDrive {
     private final SwerveModule[] modules;
 
     private static final ChassisSpeeds STOP_SPEEDS = new ChassisSpeeds(0, 0, 0);
+    private static final SwerveModuleState ZERO_STATE = new SwerveModuleState();
     private final SwerveModuleState[] stopStates;
     private final SwerveDrivePoseEstimator odometry;
     private static final Pose2d INITIAL_POSE = new Pose2d(0, 0, Rotation2d.fromDegrees(0)); 
@@ -79,15 +83,18 @@ public class SwerveDrive {
         if (absoluteEncoderConfiguration instanceof CANCoderAbsoluteEncoderConfiguration) {
             absoluteEncoder = new CANCoderAbsoluteEncoder(moduleConfiguration.absoluteEncoderCanId, moduleConfiguration.absoluteEncoderAngleOffset, (CANCoderAbsoluteEncoderConfiguration)absoluteEncoderConfiguration);
         }
+        else if (absoluteEncoderConfiguration instanceof SparkMaxAbsoluteEncoderConfiguration) {
+            absoluteEncoder = new SparkMaxAbsoluteEncoder(moduleConfiguration.absoluteEncoderCanId, moduleConfiguration.absoluteEncoderAngleOffset, (SparkMaxAbsoluteEncoderConfiguration)absoluteEncoderConfiguration);
+        }
         else {
-            throw new IllegalArgumentException("The method does not support the given absoluteEncoderConfiguration class. We only support CANCoderAbsoluteEncoder.");
+            throw new IllegalArgumentException("The method does not support the given absoluteEncoderConfiguration class. We only support CANCoderAbsoluteEncoderConfiguration and SparkMaxAbsoluteEncoderConfiguration.");
         }
 
         if (steerConfiguration instanceof TalonFXSteerConfiguration) {
             steerController = new TalonFXSteerController(moduleConfiguration.steerMotorCanId, (TalonFXSteerConfiguration)steerConfiguration, gearRatio, absoluteEncoder);
         }
         else if (steerConfiguration instanceof SparkMaxSteerConfiguration) {
-            steerController = new SparkMaxSteerController(moduleConfiguration.steerMotorCanId, (SparkMaxSteerConfiguration)steerConfiguration, gearRatio);
+            steerController = new SparkMaxSteerController(moduleConfiguration.steerMotorCanId, (SparkMaxSteerConfiguration)steerConfiguration, gearRatio, absoluteEncoder);
         }
         else {
             throw new IllegalArgumentException("The method does not support the given steerConfiguration class. We only support Neo and Falcon500 motors.");
@@ -116,7 +123,7 @@ public class SwerveDrive {
         odometry.resetPosition(configuration.gyroAngleSupplier.get(), getModulePositions(), actualPoseM);
     }
 
-    private void setOpenLoopModuleStates(SwerveModuleState[] states) {
+    public void setOpenLoopModuleStates(SwerveModuleState[] states) {
         for (int i = 0; i < modules.length; i++) {
             modules[i].setOpenLoopSpeed(
                     states[i].speedMetersPerSecond / configuration.maxSpeedMS,
@@ -131,7 +138,20 @@ public class SwerveDrive {
     public void setOpenLoopSpeed(ChassisSpeeds chassisSpeeds) {
         var states = configuration.kinematics.toSwerveModuleStates(chassisSpeeds);
         SwerveDriveKinematics.desaturateWheelSpeeds(states, configuration.maxSpeedMS);
+        // for(var state: states) {
+        //     state.speedMetersPerSecond = 0;
+        // }
         setOpenLoopModuleStates(states);
+    }
+
+    /* Useful for calibrating pivot PID. You can use this in a command which is orienting the module at some angle. */
+    public void setAngleTo(Rotation2d angle) {
+        setOpenLoopModuleStates(new SwerveModuleState[]{
+            new SwerveModuleState(0, angle),
+            new SwerveModuleState(0, angle),
+            new SwerveModuleState(0, angle),
+            new SwerveModuleState(0, angle)
+        });
     }
 
     /**
@@ -180,8 +200,12 @@ public class SwerveDrive {
         return modules[moduleLocation.index].getSteerAngle();
     } 
 
-    public double getReferenceSpeedMS(ModuleLocation moduleLocation) {
-        return modules[moduleLocation.index].getReferenceSpeedMS();
+    public double getOpenLoopReferenceSpeedPct(ModuleLocation moduleLocation) {
+        return modules[moduleLocation.index].getOpenLoopReferenceSpeedPct();
+    }
+
+    public double getClosedLoopReferenceSpeedMS(ModuleLocation moduleLocation) {
+        return modules[moduleLocation.index].getClosedLoopReferenceSpeedMS();
     }
 
     public ContinuousAngle getSteerReferenceAngle(ModuleLocation moduleLocation) {

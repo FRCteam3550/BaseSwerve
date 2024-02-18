@@ -12,11 +12,9 @@ import frc.robot.lib.swervelib.GearRatio;
 import frc.robot.lib.swervelib.SteerController;
 
 import com.revrobotics.CANSparkMaxLowLevel;
+import com.revrobotics.REVLibError;
 
 public final class SparkMaxSteerController implements SteerController {
-    private static final int ENCODER_RESET_ITERATIONS = 500;
-    private static final double ENCODER_RESET_MAX_ANGULAR_VELOCITY = Math.toRadians(0.5);
-
     private final CANSparkMax motor;
     private final SparkMaxPIDController controller;
     private final RelativeEncoder motorEncoder;
@@ -24,17 +22,16 @@ public final class SparkMaxSteerController implements SteerController {
 
     private ContinuousAngle referenceAngle = ContinuousAngle.fromDegrees(0);
 
-    private double resetIteration = 0;
+    public SparkMaxSteerController(int motorCanId, SparkMaxSteerConfiguration steerConfiguration, GearRatio gearRatio, AbsoluteEncoder absoluteEncoder) {
+        this.absoluteEncoder = absoluteEncoder;
 
-    public SparkMaxSteerController(int motorCanId, SparkMaxSteerConfiguration steerConfiguration, GearRatio gearRatio) {
-        absoluteEncoder = steerConfiguration.absoluteEncoder;
-
-        motor = new CANSparkMax(motorCanId, CANSparkMaxLowLevel.MotorType.kBrushless);
+        motor = SparkMaxControllers.getController(motorCanId);
         motor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus0, 100);
         motor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus1, 20);
         motor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus2, 20);
-        motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
-        motor.setInverted(!gearRatio.steerInverted);
+        motor.setIdleMode(CANSparkMax.IdleMode.kCoast);
+        motor.setInverted(gearRatio.steerInverted);
+
         if (steerConfiguration.hasVoltageCompensation()) {
             motor.enableVoltageCompensation(steerConfiguration.nominalVoltage);
         }
@@ -43,9 +40,15 @@ public final class SparkMaxSteerController implements SteerController {
         }
 
         motorEncoder = motor.getEncoder();
-        motorEncoder.setPositionConversionFactor(2.0 * Math.PI * gearRatio.steerReduction);
-        motorEncoder.setVelocityConversionFactor(2.0 * Math.PI * gearRatio.steerReduction / 60.0);
-        motorEncoder.setPosition(steerConfiguration.absoluteEncoder.getAbsoluteAngle().radians());
+        motorEncoder.setPositionConversionFactor(360 * gearRatio.steerReduction);
+        motorEncoder.setVelocityConversionFactor(360 * gearRatio.steerReduction / 60.0);
+        try {
+            // Wait for the conversion factor to sink in.
+            Thread.sleep(200);
+        }
+        catch(InterruptedException ie) { /* Do nothing */}
+        throwIfError(motorEncoder.setPosition(absoluteEncoder.getAbsoluteAngle().degrees()));
+
 
         controller = motor.getPIDController();
         if (steerConfiguration.hasPidConstants()) {
@@ -54,6 +57,7 @@ public final class SparkMaxSteerController implements SteerController {
             controller.setD(steerConfiguration.derivativeConstant);
         }
         controller.setFeedbackDevice(motorEncoder);
+        motor.burnFlash();
     }
 
     @Override
@@ -63,27 +67,13 @@ public final class SparkMaxSteerController implements SteerController {
 
     @Override
     public void setReferenceAngle(ContinuousAngle referenceAngle) {
-        // Reset the NEO's absoluteEncoder periodically when the module is not rotating.
-        // Sometimes (~5% of the time) when we initialize, the absolute absoluteEncoder isn't fully set up, and we don't
-        // end up getting a good reading. If we reset periodically this won't matter anymore.
-        if (motorEncoder.getVelocity() < ENCODER_RESET_MAX_ANGULAR_VELOCITY) {
-            if (++resetIteration >= ENCODER_RESET_ITERATIONS) {
-                resetIteration = 0;
-                double absoluteAngle = absoluteEncoder.getAbsoluteAngle().radians();
-                motorEncoder.setPosition(absoluteAngle);
-            }
-        } else {
-            resetIteration = 0;
-        }
-
         this.referenceAngle = referenceAngle;
-
-        controller.setReference(referenceAngle.radians(), ControlType.kPosition);
+        controller.setReference(referenceAngle.degrees(), ControlType.kPosition);
     }
 
     @Override
     public ContinuousAngle getAngle() {
-        return ContinuousAngle.fromRadians(motorEncoder.getPosition());
+        return ContinuousAngle.fromDegrees(motorEncoder.getPosition());
     }
 
     @Override
@@ -91,4 +81,9 @@ public final class SparkMaxSteerController implements SteerController {
         return absoluteEncoder.getAbsoluteAngle();
     }
 
+    private void throwIfError(REVLibError error) {
+        if (error != REVLibError.kOk) {
+            throw new RuntimeException(String.format("Error: %s", error.name()));
+        }
+    }
 }
