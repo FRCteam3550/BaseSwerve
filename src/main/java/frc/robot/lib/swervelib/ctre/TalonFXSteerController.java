@@ -1,82 +1,127 @@
 package frc.robot.lib.swervelib.ctre;
 
-import com.ctre.phoenix.motorcontrol.*;
-import com.ctre.phoenix.motorcontrol.can.TalonFX;
-import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration;
+import java.util.function.BooleanSupplier;
 
+import javax.swing.text.Position;
+
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.revrobotics.REVLibError;
+import com.revrobotics.RelativeEncoder;
+
+import edu.wpi.first.wpilibj.DriverStation;
+import frc.robot.lib.TalonFXUtils;
 import frc.robot.lib.swervelib.*;
 
 public final class TalonFXSteerController implements SteerController {
-    private static final int CAN_TIMEOUT_MS = 250;
-    private static final int STATUS_FRAME_GENERAL_PERIOD_MS = 250;
-
-    private static final double TICKS_PER_ROTATION = 2048.0;
-    private static final int ENCODER_RESET_ITERATIONS = 500;
-    private static final double ENCODER_RESET_MAX_ANGULAR_VELOCITY = Math.toRadians(0.5);
-
+    private static final double CAN_TIMEOUT_S = 0.250;
     private final TalonFX motor;
-    private final double motorEncoderPositionCoefficient;
-    private final double motorEncoderVelocityCoefficient;
-    private final TalonFXControlMode motorControlMode;
+    private final double steerMotorToMechanismReduction;
     private final AbsoluteEncoder absoluteEncoder;
 
-    private ContinuousAngle referenceAngle = ContinuousAngle.fromDegrees(0);
+    private static final double EPSILON = 1e-4;
+    private static final long WAIT_TIME_MS = 10;
 
-    private double resetIteration = 0;
+    public boolean hasShift = false; 
+    public double shift = 0.0;
+
+    private ContinuousAngle referenceAngle = ContinuousAngle.fromDegrees(0.0);
+
+    private final PositionVoltage positionVoltage = new PositionVoltage(0, 0, false, 0, 0, false, false, false);
 
     public TalonFXSteerController(int motorCanId, TalonFXSteerConfiguration steerConfiguration, GearRatio gearRatio, AbsoluteEncoder absoluteEncoder) {
-        motorEncoderPositionCoefficient = 2.0 * Math.PI / TICKS_PER_ROTATION * gearRatio.steerReduction;
-        motorEncoderVelocityCoefficient = motorEncoderPositionCoefficient * 10.0;
+        steerMotorToMechanismReduction = gearRatio.steerMotorToMechanismReduction;
         this.absoluteEncoder = absoluteEncoder;
-        motorControlMode = steerConfiguration.hasMotionMagic() ? TalonFXControlMode.MotionMagic : TalonFXControlMode.Position;
+        // motorControlMode = steerConfiguration.hasMotionMagic() ? ControlModeValue.MotionMagicDutyCycle : ControlModeValue.PositionDutyCycle;
 
         TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
         if (steerConfiguration.hasPidConstants()) {
-            motorConfiguration.slot0.kP = steerConfiguration.proportionalConstant;
-            motorConfiguration.slot0.kI = steerConfiguration.integralConstant;
-            motorConfiguration.slot0.kD = steerConfiguration.derivativeConstant;
-        }
-        if (steerConfiguration.hasMotionMagic()) {
-            if (steerConfiguration.hasVoltageCompensation()) {
-                motorConfiguration.slot0.kF = (1023.0 * motorEncoderVelocityCoefficient / steerConfiguration.nominalVoltage) * steerConfiguration.velocityConstant;
-            }
-            // TODO: What should be done if no nominal voltage is configured? Use a default voltage?
-
-            // TODO: Make motion magic max voltages configurable or dynamically determine optimal values
-            motorConfiguration.motionCruiseVelocity = 2.0 / steerConfiguration.velocityConstant / motorEncoderVelocityCoefficient;
-            motorConfiguration.motionAcceleration = (8.0 - 2.0) / steerConfiguration.accelerationConstant / motorEncoderVelocityCoefficient;
-        }
-        if (steerConfiguration.hasVoltageCompensation()) {
-            motorConfiguration.voltageCompSaturation = steerConfiguration.nominalVoltage;
+            motorConfiguration.Slot0.kP = steerConfiguration.proportionalConstant;
+            motorConfiguration.Slot0.kI = steerConfiguration.integralConstant;
+            motorConfiguration.Slot0.kD = steerConfiguration.derivativeConstant;
         }
         if (steerConfiguration.hasCurrentLimit()) {
-            motorConfiguration.supplyCurrLimit.currentLimit = steerConfiguration.currentLimit;
-            motorConfiguration.supplyCurrLimit.enable = true;
+            motorConfiguration.CurrentLimits.SupplyCurrentLimit = steerConfiguration.currentLimit;
+            motorConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
         }
 
         motor = new TalonFX(motorCanId);
-        motor.configAllSettings(motorConfiguration, CAN_TIMEOUT_MS);
 
-        if (steerConfiguration.hasVoltageCompensation()) {
-            motor.enableVoltageCompensation(true);
-        }
-        motor.configSelectedFeedbackSensor(TalonFXFeedbackDevice.IntegratedSensor, 0, CAN_TIMEOUT_MS);
-        motor.setSensorPhase(gearRatio.steerInverted);
-        motor.setInverted(TalonFXInvertType.CounterClockwise);
-        motor.setNeutralMode(NeutralMode.Brake);
+        motorConfiguration.Feedback.withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor);
+        motorConfiguration.MotorOutput.Inverted = gearRatio.steerInverted ? InvertedValue.CounterClockwise_Positive : InvertedValue.Clockwise_Positive;
+        motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        motorConfiguration.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.03;
+        final double appliedMotAngleRot = (motorCanId == 4 ? getInitAngleRot() : absoluteEncoder.getAbsoluteAngle().rotations()) / steerMotorToMechanismReduction; //rotations du mecanism
+        // motorConfiguration.Feedback.FeedbackRotorOffset = appliedMotAngleRot;
+        TalonFXUtils.throwIfError(motor.getConfigurator().apply(motorConfiguration));
 
-        motor.setSelectedSensorPosition(
-                absoluteEncoder.getAbsoluteAngle().radians() / motorEncoderPositionCoefficient,
-                0,
-                CAN_TIMEOUT_MS);
-
-        // Reduce CAN status frame rates
-        motor.setStatusFramePeriod(
-                StatusFrameEnhanced.Status_1_General,
-                STATUS_FRAME_GENERAL_PERIOD_MS,
-                CAN_TIMEOUT_MS
-        );
+        TalonFXUtils.throwIfError(motor.getPosition().setUpdateFrequency(20, CAN_TIMEOUT_S)); //rotations du moteur
+        TalonFXUtils.throwIfError(motor.setPosition(appliedMotAngleRot, CAN_TIMEOUT_S)); //rotations du moteur
+        waitUntil(500, () -> areApproxEqual(appliedMotAngleRot, motor.getPosition().getValueAsDouble())); //rotations du moteur
     }
+
+    private static final void waitFor(long waitTimeMillis) {
+        try {
+            Thread.sleep(waitTimeMillis);
+        }
+        catch(InterruptedException ie) {}
+    }
+
+    private static final long waitUntil(long maxWait, BooleanSupplier conditionToBeTrue) {
+        long totalWaitTimeMs = 0;
+
+        while (!conditionToBeTrue.getAsBoolean() && totalWaitTimeMs < maxWait) {
+            try {
+                Thread.sleep(WAIT_TIME_MS);
+                totalWaitTimeMs += WAIT_TIME_MS;
+            }
+            catch(InterruptedException ie) {}
+        }
+
+        if (!conditionToBeTrue.getAsBoolean()) {
+            DriverStation.reportWarning("Waited too long in TalonFXSteerController!", false);
+        }
+
+        return totalWaitTimeMs;
+    }
+
+    private static final boolean areApproxEqual(double x, double y) {
+        return Math.abs(x - y) < EPSILON;
+    }
+    
+    private double getInitAngleRot() {
+        var initAngle = absoluteEncoder.getAbsoluteAngle().rotations();
+
+        hasShift = !(initAngle < 3 || initAngle > 357 || (initAngle > 177 && initAngle < 183));
+
+        if (!hasShift) {
+            shift = 0;
+            return initAngle;
+        } else if (initAngle < 90) {
+            shift = initAngle;
+            return 0;
+        } else if (initAngle < 270) {
+            shift = 180 - initAngle;
+            return 180;
+        } else {
+            shift = 360 - initAngle;
+            return 0;
+        }
+    } 
+
+    public void invertWheel() {
+        motor.stopMotor();
+        double currentAngleDeg = motor.getPosition().getValueAsDouble() + 180;
+        TalonFXUtils.throwIfError(motor.setPosition(currentAngleDeg));
+        waitUntil(500, () -> areApproxEqual(currentAngleDeg, motor.getPosition().getValueAsDouble()));
+    }
+
 
     @Override
     public ContinuousAngle getReferenceAngle() {
@@ -84,33 +129,29 @@ public final class TalonFXSteerController implements SteerController {
     }
 
     @Override
-    public void setReferenceAngle(ContinuousAngle referenceAngle) {
-        // Reset the NEO's absoluteEncoder periodically when the module is not rotating.
-        // Sometimes (~5% of the time) when we initialize, the absolute absoluteEncoder isn't fully set up, and we don't
-        // end up getting a good reading. If we reset periodically this won't matter anymore.
-        if (motor.getSelectedSensorVelocity() * motorEncoderVelocityCoefficient < ENCODER_RESET_MAX_ANGULAR_VELOCITY) {
-            if (++resetIteration >= ENCODER_RESET_ITERATIONS) {
-                resetIteration = 0;
-                double absoluteAngle = absoluteEncoder.getAbsoluteAngle().radians();
-                motor.setSelectedSensorPosition(absoluteAngle / motorEncoderPositionCoefficient);
-            }
-        } else {
-            resetIteration = 0;
-        }
-        motor.set(motorControlMode, referenceAngle.radians() / motorEncoderPositionCoefficient);
-
-
+    public void setReferenceAngle(ContinuousAngle referenceAngle){
+        TalonFXUtils.throwIfError(motor.setControl(positionVoltage.withPosition(referenceAngle.rotations() / steerMotorToMechanismReduction)));
         this.referenceAngle = referenceAngle;
     }
 
     @Override
     public ContinuousAngle getAngle() {
-        return ContinuousAngle.fromRadians(motor.getSelectedSensorPosition() * motorEncoderPositionCoefficient);
+        return ContinuousAngle.fromRotations(motor.getPosition().getValueAsDouble() * steerMotorToMechanismReduction);
     }
 
     @Override
     public DiscreetAngle getAbsoluteAngle() {
         return absoluteEncoder.getAbsoluteAngle();
+    }
+
+    @Override
+    public double getOutput() {
+        return motor.getClosedLoopOutput().getValueAsDouble();
+    }
+
+    @Override
+    public void periodic() {
+
     }
 
 }

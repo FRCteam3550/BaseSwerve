@@ -11,6 +11,8 @@ public interface DriveController {
 
     double getSpeedMS();
 
+    double getOutput();
+
     double getPositionM();
 
     double getPositionNativeUnits();

@@ -19,7 +19,7 @@ public final class SdsGearRatios {
             0.10033 * Math.PI,
             (14.0 / 50.0) * (28.0 / 16.0) * (15.0 / 45.0),
             true,
-            (15.0 / 32.0) * (10.0 / 60.0),
+            (15.0 / 32.0) * (10.0 / 60.0), //0.078125
             true
     );
     public static final GearRatio MK4_L4 = new GearRatio(

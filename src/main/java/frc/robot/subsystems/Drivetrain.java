@@ -13,7 +13,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.lib.Navx;
 import frc.robot.lib.swervelib.*;
-import frc.robot.lib.swervelib.ctre.CANCoderAbsoluteEncoderConfiguration;
+import frc.robot.lib.swervelib.CANCoderAbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXDriveConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXSteerConfiguration;
 
@@ -173,7 +173,7 @@ public class Drivetrain extends SubsystemBase {
                     -gamepad.getRightX() * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
                     getGyroscopeRotation()));
         })
-            .andThen(() -> swerveDrive.stop());
+        .andThen(() -> swerveDrive.stop());
     }
 
     @Override

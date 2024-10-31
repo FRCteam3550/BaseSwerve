@@ -1,24 +1,27 @@
 package frc.robot.lib.swervelib.rev;
 
+import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMaxLowLevel;
+import com.revrobotics.CANSparkBase;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkMaxPIDController;
-import com.revrobotics.CANSparkMax.ControlType;
+import com.revrobotics.SparkPIDController;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.lib.swervelib.DriveController;
 import frc.robot.lib.swervelib.GearRatio;
 
 public final class SparkMaxDriveController implements DriveController {
     private final CANSparkMax motor;
-    private final SparkMaxPIDController pidController;
+    private final SparkPIDController pidController;
     private final RelativeEncoder encoder;
     private double referenceSpeedMS = 0;
     private double metersPerMotorRotation;
 
     public SparkMaxDriveController(int motorCanId, SparkMaxDriveConfiguration configuration, GearRatio gearRatio, double maxSpeedMS) {
-        motor = new CANSparkMax(motorCanId, CANSparkMaxLowLevel.MotorType.kBrushless);
+        motor = new CANSparkMax(motorCanId, CANSparkLowLevel.MotorType.kBrushless);
+        motor.restoreFactoryDefaults();
         motor.setInverted(gearRatio.driveInverted);
+        motor.setSmartCurrentLimit(38);
 
         // Setup voltage compensation
         if (configuration.hasVoltageCompensation()) {
@@ -29,16 +32,16 @@ public final class SparkMaxDriveController implements DriveController {
             motor.setSmartCurrentLimit((int)configuration.currentLimit);
         }
 
-        motor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus0, 100);
-        motor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus1, 20);
-        motor.setPeriodicFramePeriod(CANSparkMaxLowLevel.PeriodicFrame.kStatus2, 20);
+        motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus0, 100);
+        motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus1, 20);
+        motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus2, 20);
         // Set neutral mode to brake
-        motor.setIdleMode(CANSparkMax.IdleMode.kBrake);
+        motor.setIdleMode(CANSparkMax.IdleMode.kBrake); //FIXME
 
         // Setup absoluteEncoder
         encoder = motor.getEncoder();
-        if (configuration.rotationsPerMeter != Double.NaN) {
-            metersPerMotorRotation = 1 / configuration.rotationsPerMeter;
+        if (!Double.isNaN(configuration.rotationsPerMeter)) {
+            metersPerMotorRotation = 1.0 / configuration.rotationsPerMeter;
         } else {
             metersPerMotorRotation = gearRatio.wheelCircumferenceM * gearRatio.driveReduction;
         }
@@ -51,7 +54,7 @@ public final class SparkMaxDriveController implements DriveController {
             if (Double.isNaN(configuration.feedForwardConstant)) {
                 // FF unit: normalized/native
                 // Normalized: -1 to 1
-                // Native: RPM (velocity) Rotations (position)
+                // Native: RPS (velocity) Rotations (position)
                 var maxRotationsPerMinutes = maxSpeedMS / metersPerMotorRotation * 60;
                 pidController.setFF(1 / maxRotationsPerMinutes);
             } else {
@@ -61,6 +64,8 @@ public final class SparkMaxDriveController implements DriveController {
             pidController.setI(configuration.integralConstant);
             pidController.setD(configuration.derivativeConstant);
         }
+
+        motor.burnFlash();
     }
 
     @Override
@@ -71,7 +76,7 @@ public final class SparkMaxDriveController implements DriveController {
     @Override
     public void setClosedLoopSpeed(double speedMS) {
         referenceSpeedMS = speedMS;
-        pidController.setReference(speedMS, ControlType.kVelocity);
+        pidController.setReference(speedMS, CANSparkBase.ControlType.kVelocity);
     }
 
     @Override
@@ -87,6 +92,11 @@ public final class SparkMaxDriveController implements DriveController {
     @Override
     public double getPositionNativeUnits() {
         return encoder.getPosition() / metersPerMotorRotation;
+    }
+
+    @Override
+    public double getOutput() {
+        return motor.getAppliedOutput();
     }
 
     @Override

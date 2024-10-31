@@ -20,12 +20,20 @@ public class ContinuousAngle {
         return new ContinuousAngle(angleDegrees, Math.toRadians(angleDegrees));
     }
     
+    public static ContinuousAngle fromRotations(double angleRotations) {
+        return fromDegrees(angleRotations * 360.0);
+    }
+    
     public double radians() {
         return angleRadians;
     }
 
     public double degrees() {
         return angleDegrees;
+    }
+
+    public double rotations() {
+        return angleDegrees / 360.0;
     }
 
     public DiscreetAngle asDiscreet() {

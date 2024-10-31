@@ -1,102 +1,89 @@
 package frc.robot.lib.swervelib.ctre;
 
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
-import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
-import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
-import com.ctre.phoenix.motorcontrol.TalonFXInvertType;
-import com.ctre.phoenix.motorcontrol.can.TalonFX;
-import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration;
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.InvertedValue;
 
 import frc.robot.lib.swervelib.DriveController;
 import frc.robot.lib.swervelib.GearRatio;
 
 public final class TalonFXDriveController implements DriveController {
-    private static final double TICKS_PER_ROTATION = 2048.0;
-
-    private static final int CAN_TIMEOUT_MS = 250;
-    private static final int STATUS_FRAME_GENERAL_PERIOD_MS = 250;
     private final TalonFX motor;
-    private final double sensorVelocityCoefficient;
-    private final double metersPerTicks;
+    private final double metersPerRotation;
     private double referenceSpeedMS = 0;
 
     public TalonFXDriveController(int motorCanId, TalonFXDriveConfiguration configuration, GearRatio gearRatio, double maxSpeedMS) {
         TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
-        if(configuration.ticksPerMeter != Double.NaN){
-            metersPerTicks = 1 / configuration.ticksPerMeter;
+        if(!Double.isNaN(configuration.rotationsPerMeter)){
+            metersPerRotation = 1 / configuration.rotationsPerMeter;
         } else {
-            metersPerTicks = gearRatio.wheelCircumferenceM * gearRatio.driveReduction / TICKS_PER_ROTATION;
+            metersPerRotation = gearRatio.wheelCircumferenceM * gearRatio.driveReduction;
         }
-        sensorVelocityCoefficient = metersPerTicks * 10.0;
 
         if (configuration.hasPidConstants()) {
             if (Double.isNaN(configuration.feedForwardConstant)) {
-                var maxTicksPerSeconds = maxSpeedMS / metersPerTicks;
-                var maxTicksPer100ms = maxTicksPerSeconds / 10;
-                motorConfiguration.slot0.kF = 1023 / maxTicksPer100ms;
+                var maxRotationsPerSeconds = maxSpeedMS / metersPerRotation;
+                motorConfiguration.Slot0.kV = 12 / maxRotationsPerSeconds;
             } else {
-                motorConfiguration.slot0.kF = configuration.feedForwardConstant;
+                motorConfiguration.Slot0.kV = configuration.feedForwardConstant;
             }
-            motorConfiguration.slot0.kP = configuration.proportionalConstant;
-            motorConfiguration.slot0.kI = configuration.integralConstant;
-            motorConfiguration.slot0.kD = configuration.derivativeConstant;
+            motorConfiguration.Slot0.kP = configuration.proportionalConstant;
+            motorConfiguration.Slot0.kI = configuration.integralConstant;
+            motorConfiguration.Slot0.kD = configuration.derivativeConstant;
         }
-
-        if (configuration.hasVoltageCompensation()) {
-            motorConfiguration.voltageCompSaturation = configuration.nominalVoltage;
+ 
+        if (configuration.hasCurrentLimit()){
+                motorConfiguration.CurrentLimits.SupplyCurrentLimit = configuration.currentLimit;
+                motorConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
         }
-
-        if (configuration.hasCurrentLimit()) {
-            motorConfiguration.supplyCurrLimit.currentLimit = configuration.currentLimit;
-            motorConfiguration.supplyCurrLimit.enable = true;
-        }
-
+          
         motor = new TalonFX(motorCanId);
-        motor.configAllSettings(motorConfiguration, CAN_TIMEOUT_MS);
 
-        if (configuration.hasVoltageCompensation()) {
-            motor.enableVoltageCompensation(true);
-        }
+        motorConfiguration.MotorOutput.Inverted = gearRatio.driveInverted ? InvertedValue.Clockwise_Positive : InvertedValue.CounterClockwise_Positive;
+        motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        motorConfiguration.Feedback.withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor);
 
-        motor.setNeutralMode(NeutralMode.Brake);
-
-        motor.setInverted(gearRatio.driveInverted ? TalonFXInvertType.Clockwise : TalonFXInvertType.CounterClockwise);
-        motor.configSelectedFeedbackSensor(TalonFXFeedbackDevice.IntegratedSensor, 0, CAN_TIMEOUT_MS);
-        motor.setSensorPhase(true);
-
-        // Reduce CAN status frame rates
-        motor.setStatusFramePeriod(
-                StatusFrameEnhanced.Status_1_General,
-                STATUS_FRAME_GENERAL_PERIOD_MS,
-                CAN_TIMEOUT_MS
-        );
+        motor.getConfigurator().apply(motorConfiguration);
     }
 
     @Override
     public void setOpenLoopSpeed(double pct) {
-        motor.set(TalonFXControlMode.PercentOutput, pct);
+        motor.setVoltage(pct * 12);
+
     }
 
     @Override
     public void setClosedLoopSpeed(double speedMS) {
-        motor.set(TalonFXControlMode.Velocity, speedMS / sensorVelocityCoefficient);
+        motor.setControl(new VelocityVoltage(   speedMS / metersPerRotation));
         referenceSpeedMS = speedMS;
     }
 
     @Override
     public double getSpeedMS() {
-        return motor.getSelectedSensorVelocity() * sensorVelocityCoefficient;
+        return motor.getVelocity().getValueAsDouble() * metersPerRotation;
     }
 
     @Override
     public double getPositionM() {
-        return motor.getSelectedSensorPosition() * metersPerTicks;
+        return motor.getPosition().getValueAsDouble() * metersPerRotation;
     }
 
     @Override
     public double getPositionNativeUnits() {
-        return motor.getSelectedSensorPosition();
+        return motor.getPosition().getValueAsDouble();
+    }
+    
+    @Override
+    public double getOutput() {
+        return motor.getClosedLoopOutput().getValueAsDouble();
     }
 
     @Override
