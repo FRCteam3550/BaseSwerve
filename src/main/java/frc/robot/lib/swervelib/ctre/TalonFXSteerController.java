@@ -2,18 +2,12 @@ package frc.robot.lib.swervelib.ctre;
 
 import java.util.function.BooleanSupplier;
 
-import javax.swing.text.Position;
-
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
-import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.revrobotics.REVLibError;
-import com.revrobotics.RelativeEncoder;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.lib.TalonFXUtils;
@@ -64,13 +58,6 @@ public final class TalonFXSteerController implements SteerController {
         TalonFXUtils.throwIfError(motor.getPosition().setUpdateFrequency(20, CAN_TIMEOUT_S)); //rotations du moteur
         TalonFXUtils.throwIfError(motor.setPosition(appliedMotAngleRot, CAN_TIMEOUT_S)); //rotations du moteur
         waitUntil(500, () -> areApproxEqual(appliedMotAngleRot, motor.getPosition().getValueAsDouble())); //rotations du moteur
-    }
-
-    private static final void waitFor(long waitTimeMillis) {
-        try {
-            Thread.sleep(waitTimeMillis);
-        }
-        catch(InterruptedException ie) {}
     }
 
     private static final long waitUntil(long maxWait, BooleanSupplier conditionToBeTrue) {

@@ -6,7 +6,6 @@ import com.revrobotics.CANSparkBase;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkPIDController;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.lib.swervelib.DriveController;
 import frc.robot.lib.swervelib.GearRatio;
 

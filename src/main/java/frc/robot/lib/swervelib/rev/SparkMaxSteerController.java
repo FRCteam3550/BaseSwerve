@@ -5,13 +5,11 @@ import com.revrobotics.REVLibError;
 
 import java.util.function.BooleanSupplier;
 
-import com.revrobotics.CANSparkBase;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkPIDController;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import com.revrobotics.CANSparkLowLevel;
 
@@ -59,12 +57,10 @@ public final class SparkMaxSteerController implements SteerController {
         double positionRatio = 360 * gearRatio.steerMotorToMechanismReduction;
         motorEncoder.setPositionConversionFactor(positionRatio);
         motorEncoder.setVelocityConversionFactor(positionRatio / 60.0);
-        double totalWaitTimeMs = waitUntil(500, () -> areApproxEqual(positionRatio, motorEncoder.getPositionConversionFactor()));
         
         waitFor(20);
         final double appliedAngle = motorCanId == 4 ? getInitAngleDeg() : absoluteEncoder.getAbsoluteAngle().degrees();
         throwIfError(motorEncoder.setPosition(appliedAngle));
-        totalWaitTimeMs += waitUntil(500, () -> areApproxEqual(appliedAngle, motorEncoder.getPosition()));
         
         controller = motor.getPIDController();
         if (steerConfiguration.hasPidConstants()) {

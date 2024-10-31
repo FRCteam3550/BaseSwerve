@@ -2,8 +2,6 @@ package frc.robot.lib.swervelib;
 
 import org.junit.jupiter.api.Test;
 
-import frc.robot.lib.swervelib.DiscreetAngle;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 
