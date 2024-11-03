@@ -6,7 +6,6 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 
 import frc.robot.lib.swervelib.AbsoluteEncoder;
-import frc.robot.lib.swervelib.CANCoderAbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.DiscreetAngle;
 
 public class CANCoderAbsoluteEncoder implements AbsoluteEncoder {
