@@ -1,7 +1,11 @@
 # BaseSwerve
 ​
-**Basic Swerve Code for a Swerve Module using Falcon, Neo, or Kraken Motors, a CTRE CANCoder, and a NAVX Gyro**
-This code was designed with Swerve Drive Specialties MK4 style modules in mind, but should be easily adaptable to other styles of modules.
+**Basic Swerve Code for a Swerve Module supporting TalonFX and SparkMax based Motors, CTRE CANCoder and Rev absolute encoders, and NAVX Gyro**
+This code is modular and could be adapted to any other hardware easily (see "Supporting other type of hardware" below).
+It comes with 2 example of drivetrains:
+
+- one based on Krakens and CANCoders.
+- a MaxSwerve one with Neos.
 ​
 ## Basic configuration
 ----
@@ -119,7 +123,14 @@ Note that in this case, a decent feed forward gain will be computed for you from
 ```java
 new TalonFXDriveConfiguration().withPIDConstants(DRIVESPEED_FF, DRIVESPEED_P, DRIVESPEED_I, DRIVESPEED_D)
 ```
-​
+
+## Supporting other type of hardware
+----
+
+- For supporting a new motor controller for the "drive" motor, implement a new `DriveConfiguration` / `DriveController` pair.
+- For supporting a new motor controller for the "steer" motor, implement a new `SteerConfiguration` / `SteerController` pair.
+- For supporting a new absolute encoder, implement a new `AbsoluteEncoderConfiguration` / `AbsoluteEncoder` pair.
+
 ## Credits
 ----
 ​

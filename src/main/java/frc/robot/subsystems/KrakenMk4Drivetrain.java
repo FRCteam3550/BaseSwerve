@@ -13,36 +13,13 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.lib.Navx;
 import frc.robot.lib.swervelib.*;
+import frc.robot.lib.swervelib.ctre.CANCoderAbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXDriveConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXSteerConfiguration;
 
 import com.kauailabs.navx.frc.AHRS;
 
-public class Drivetrain extends SubsystemBase {
-
-    private static final double FRONT_SIDE_M = .415;
-    private static final double RIGHT_SIDE_M = .596;
-    private static final double BACK_SIDE_M = .420;
-    private static final double LEFT_SIDE_M = .594;
-
-    private static final double FRONT_RIGHT_MODULE_X_M = FRONT_SIDE_M / 2;
-    private static final double FRONT_RIGHT_MODULE_Y_M = -RIGHT_SIDE_M / 2;
-
-    private static final double FRONT_LEFT_MODULE_X_M = FRONT_SIDE_M / 2;
-    private static final double FRONT_LEFT_MODULE_Y_M = LEFT_SIDE_M / 2;
-
-    private static final double BACK_RIGHT_MODULE_X_M = -BACK_SIDE_M / 2;
-    private static final double BACK_RIGHT_MODULE_Y_M = -RIGHT_SIDE_M / 2;
-
-    private static final double BACK_LEFT_MODULE_X_M = -BACK_SIDE_M / 2;
-    private static final double BACK_LEFT_MODULE_Y_M = LEFT_SIDE_M / 2;
-
-    private static final double STEERPOS_P = 12.3550; // .75
-    private static final double STEERPOS_I = 0;
-    private static final double STEERPOS_D = 0; // 2
-    private static final double MAX_SPEED_MS = 4.786;
-
-    // CAN IDs
+public class KrakenMk4Drivetrain extends SubsystemBase {
     private static final int FRONT_LEFT_MODULE_DRIVE_MOTOR_ID = 3;
     private static final int FRONT_LEFT_MODULE_STEER_MOTOR_ID = 7;
     private static final int FRONT_LEFT_MODULE_STEER_ENCODER_ID = 9;
@@ -63,34 +40,44 @@ public class Drivetrain extends SubsystemBase {
     private static final int BACK_RIGHT_MODULE_STEER_ENCODER_ID = 0;
     private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(32.520);
 
-    // FIXME Measure the drivetrain's maximum velocity or calculate the theoretical.
-    // The formula for calculating the theoretical maximum velocity is:
-    // <Motor free speed RPM> / 60 * <Drive reduction> * <Wheel diameter meters> *
-    // pi
-    // By default this value is setup for a Mk3 standard module using Falcon500s to
-    // drive.
-    // An example of this constant for a Mk4 L2 module with NEOs to drive is:
-    // 5880.0 / 60.0 / SdsModuleConfigurations.MK4_L2.getDriveReduction() *
-    // SdsModuleConfigurations.MK4_L2.getWheelDiameter() * Math.PI
+    private static final double FRONT_SIDE_M = .415;
+    private static final double RIGHT_SIDE_M = .596;
+    private static final double BACK_SIDE_M = .420;
+    private static final double LEFT_SIDE_M = .594;
+
+    private static final double FRONT_RIGHT_MODULE_X_M = FRONT_SIDE_M / 2;
+    private static final double FRONT_RIGHT_MODULE_Y_M = -RIGHT_SIDE_M / 2;
+
+    private static final double FRONT_LEFT_MODULE_X_M = FRONT_SIDE_M / 2;
+    private static final double FRONT_LEFT_MODULE_Y_M = LEFT_SIDE_M / 2;
+
+    private static final double BACK_RIGHT_MODULE_X_M = -BACK_SIDE_M / 2;
+    private static final double BACK_RIGHT_MODULE_Y_M = -RIGHT_SIDE_M / 2;
+
+    private static final double BACK_LEFT_MODULE_X_M = -BACK_SIDE_M / 2;
+    private static final double BACK_LEFT_MODULE_Y_M = LEFT_SIDE_M / 2;
+
+    private static final SwerveDriveKinematics KINEMATICS = new SwerveDriveKinematics(
+        new Translation2d(FRONT_LEFT_MODULE_X_M, FRONT_LEFT_MODULE_Y_M),
+        new Translation2d(FRONT_RIGHT_MODULE_X_M, FRONT_RIGHT_MODULE_Y_M),
+        new Translation2d(BACK_LEFT_MODULE_X_M, BACK_LEFT_MODULE_Y_M),
+        new Translation2d(BACK_RIGHT_MODULE_X_M, BACK_RIGHT_MODULE_Y_M)
+    );
+
+    private static final double MAX_SPEED_MS = 4.786;
+
     /**
      * The maximum angular velocity of the robot in radians per second.
-     * <p>
      * This is a measure of how fast the robot can rotate in place.
+     * Here we calculate the theoretical maximum angular velocity. You can also
+     * replace this with a measured amount.
      */
-    // Here we calculate the theoretical maximum angular velocity. You can also
-    // replace this with a measured amount.
     private static final double MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND = MAX_SPEED_MS
             / Math.hypot(FRONT_SIDE_M, RIGHT_SIDE_M);
 
-    private static final SwerveDriveKinematics KINEMATICS = new SwerveDriveKinematics(
-            // Front left
-            new Translation2d(FRONT_LEFT_MODULE_X_M, FRONT_LEFT_MODULE_Y_M),
-            // Front right
-            new Translation2d(FRONT_RIGHT_MODULE_X_M, FRONT_RIGHT_MODULE_Y_M),
-            // Back left
-            new Translation2d(BACK_LEFT_MODULE_X_M, BACK_LEFT_MODULE_Y_M),
-            // Back right
-            new Translation2d(BACK_RIGHT_MODULE_X_M, BACK_RIGHT_MODULE_Y_M));
+    private static final double STEER_POS_P = 12.3550; // .75
+    private static final double STEER_POS_I = 0;
+    private static final double STEER_POS_D = 0; // 2
 
     private final AHRS navx = Navx.newReadyNavx(); // NavX connected over MXP
 
@@ -122,7 +109,7 @@ public class Drivetrain extends SubsystemBase {
         SdsGearRatios.MK4_L1,
         new TalonFXDriveConfiguration(),
         new TalonFXSteerConfiguration()
-            .withPidConstants(STEERPOS_P, STEERPOS_I, STEERPOS_D), 
+            .withPidConstants(STEER_POS_P, STEER_POS_I, STEER_POS_D), 
         new CANCoderAbsoluteEncoderConfiguration(),
         new SwerveDriveConfiguration(
             MAX_SPEED_MS, 
@@ -133,7 +120,7 @@ public class Drivetrain extends SubsystemBase {
 
     private final CommandXboxController gamepad;
 
-    public Drivetrain(CommandXboxController gamepad) {
+    public KrakenMk4Drivetrain(CommandXboxController gamepad) {
         this.gamepad = gamepad;
         setDefaultCommand(drive());
 
@@ -164,12 +151,14 @@ public class Drivetrain extends SubsystemBase {
 
     public Command drive() {
        return run(() -> {
-            swerveDrive.setOpenLoopSpeed(
-                ChassisSpeeds.fromFieldRelativeSpeeds(
-                    gamepad.getLeftX() * MAX_SPEED_MS,
-                    -gamepad.getLeftY() * MAX_SPEED_MS,
-                    -gamepad.getRightX() * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
-                    getGyroscopeRotation()));
+            var chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(
+                gamepad.getLeftX() * MAX_SPEED_MS,
+                -gamepad.getLeftY() * MAX_SPEED_MS,
+                -gamepad.getRightX() * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
+                getGyroscopeRotation()
+            );
+
+            swerveDrive.setOpenLoopSpeed(chassisSpeeds);
         })
         .andThen(() -> swerveDrive.stop());
     }

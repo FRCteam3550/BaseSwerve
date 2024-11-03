@@ -1,6 +1,8 @@
 package frc.robot.lib.swervelib.ctre;
 
 import frc.robot.lib.swervelib.DriveConfiguration;
+import frc.robot.lib.swervelib.DriveController;
+import frc.robot.lib.swervelib.GearRatio;
 
 public class TalonFXDriveConfiguration implements DriveConfiguration {
     private static final double DEFAULT_NOMINAL_VOLTAGE = 12;
@@ -53,6 +55,10 @@ public class TalonFXDriveConfiguration implements DriveConfiguration {
             Double.NaN,
             Double.NaN
         );
+    }
+
+    public DriveController createDriveController(int motorCanId, GearRatio gearRatio, double maxSpeedMS) {
+        return new TalonFXDriveController(motorCanId, this, gearRatio, maxSpeedMS);
     }
 
     public boolean hasVoltageCompensation() {
