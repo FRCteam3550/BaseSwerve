@@ -109,7 +109,7 @@ public class KrakenMk4Drivetrain extends SubsystemBase {
         SdsGearRatios.MK4_L1,
         new TalonFXDriveConfiguration(),
         new TalonFXSteerConfiguration()
-            .withPidConstants(STEER_POS_P, STEER_POS_I, STEER_POS_D), 
+            .withPidGains(STEER_POS_P, STEER_POS_I, STEER_POS_D), 
         new CANCoderAbsoluteEncoderConfiguration(),
         new SwerveDriveConfiguration(
             MAX_SPEED_MS, 

@@ -11,21 +11,21 @@ public class TalonFXSteerConfiguration implements SteerConfiguration {
 
     public final double nominalVoltage;
     public final double currentLimit;
-    public final double proportionalConstant;
-    public final double integralConstant;
-    public final double derivativeConstant;
+    public final double proportionalGain;
+    public final double integralGain;
+    public final double derivativeGain;
 
     public TalonFXSteerConfiguration(
         double nominalVoltage,
         double currentLimit,
-        double proportionalConstant,
-        double integralConstant,
-        double derivativeConstant) {
+        double proportionalGain,
+        double integralGain,
+        double derivativeGain) {
         this.nominalVoltage = nominalVoltage;
         this.currentLimit = currentLimit;
-        this.proportionalConstant = proportionalConstant;
-        this.integralConstant = integralConstant;
-        this.derivativeConstant = derivativeConstant;
+        this.proportionalGain = proportionalGain;
+        this.integralGain = integralGain;
+        this.derivativeGain = derivativeGain;
     }
 
     public TalonFXSteerConfiguration() {
@@ -50,9 +50,9 @@ public class TalonFXSteerConfiguration implements SteerConfiguration {
         return new TalonFXSteerConfiguration(
                 nominalVoltage,
                 this.currentLimit,
-                this.proportionalConstant,
-                this.integralConstant,
-                this.derivativeConstant
+                this.proportionalGain,
+                this.integralGain,
+                this.derivativeGain
         );
     }
 
@@ -64,13 +64,13 @@ public class TalonFXSteerConfiguration implements SteerConfiguration {
         return new TalonFXSteerConfiguration(
                 this.nominalVoltage,
                 currentLimit,
-                this.proportionalConstant,
-                this.integralConstant,
-                this.derivativeConstant
+                this.proportionalGain,
+                this.integralGain,
+                this.derivativeGain
         );
     }
 
-    public TalonFXSteerConfiguration withPidConstants(double proportional, double integral, double derivative) {
+    public TalonFXSteerConfiguration withPidGains(double proportional, double integral, double derivative) {
         return new TalonFXSteerConfiguration(
                 this.nominalVoltage,
                 this.currentLimit,
@@ -80,9 +80,9 @@ public class TalonFXSteerConfiguration implements SteerConfiguration {
         );
     }
 
-    public void ensureHasPidConstants() {
-        if (!Double.isFinite(proportionalConstant) || !Double.isFinite(integralConstant) || !Double.isFinite(derivativeConstant)) {
-            throw new IllegalArgumentException("You must define PID parameter for a TalonFXSteerConfiguration using .withPidConstants()");
+    public void ensureHasPidGains() {
+        if (!Double.isFinite(proportionalGain) || !Double.isFinite(integralGain) || !Double.isFinite(derivativeGain)) {
+            throw new IllegalArgumentException("You must define PID gains for a TalonFXSteerConfiguration using .withPidGains()");
         }
     }
 }

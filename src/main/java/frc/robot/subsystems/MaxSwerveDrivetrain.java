@@ -114,7 +114,8 @@ public class MaxSwerveDrivetrain extends SubsystemBase {
         RevGearRatios.SWERVE_MAX_3IN_HIGH,
         new SparkMaxDriveConfiguration(),
         new SparkMaxSteerConfiguration()
-            .withPidConstants(STEER_POS_P, STEER_POS_I, STEER_POS_D), 
+            .useInternalAbsoluteEncoderForFeedback()
+            .withPidGains(STEER_POS_P, STEER_POS_I, STEER_POS_D), 
         new SparkMaxAbsoluteEncoderConfiguration(true),
         new SwerveDriveConfiguration(
             MAX_SPEED_MS, 
