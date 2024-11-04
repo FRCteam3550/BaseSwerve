@@ -1,9 +1,13 @@
 package frc.robot.lib.swervelib.rev;
 
 import com.revrobotics.CANSparkMax;
+
+import java.util.function.Supplier;
+
 import com.revrobotics.CANSparkBase;
 
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkAbsoluteEncoder;
 import com.revrobotics.SparkPIDController;
 
 import com.revrobotics.CANSparkLowLevel;
@@ -23,11 +27,12 @@ public final class SparkMaxSteerController implements SteerController {
     private final SparkPIDController pidController;
     private final RelativeEncoder motorEncoder;
     private final AbsoluteEncoder absoluteEncoder;
+    private final Supplier<ContinuousAngle> feedbackAngleGetter;
 
     private ContinuousAngle referenceAngle = ContinuousAngle.fromDegrees(0);
 
     public SparkMaxSteerController(int motorCanId, SparkMaxSteerConfiguration steerConfiguration, GearRatio gearRatio, AbsoluteEncoder absoluteEncoder) {
-        steerConfiguration.ensureHasPidConstants();
+        steerConfiguration.ensureHasPidGains();
         this.absoluteEncoder = absoluteEncoder;
 
         motor = SparkMaxUtils.getController(motorCanId);
@@ -46,6 +51,7 @@ public final class SparkMaxSteerController implements SteerController {
         }
 
         motorEncoder = motor.getEncoder();
+
         double positionToDegreesRatio = 360 * gearRatio.steerMotorToMechanismReduction;
         SparkMaxUtils.throwIfError(motorEncoder.setPositionConversionFactor(positionToDegreesRatio));        
         SystemUtils.waitUntil(
@@ -53,11 +59,24 @@ public final class SparkMaxSteerController implements SteerController {
             () -> MathUtils.areApproxEqual(positionToDegreesRatio, motorEncoder.getPositionConversionFactor())
         );
         SparkMaxUtils.throwIfError(motorEncoder.setPosition(absoluteEncoder.getAbsoluteAngle().degrees()));
-        
+
         pidController = motor.getPIDController();
-        SparkMaxUtils.throwIfError(pidController.setP(steerConfiguration.proportionalConstant));
-        SparkMaxUtils.throwIfError(pidController.setI(steerConfiguration.integralConstant));
-        SparkMaxUtils.throwIfError(pidController.setD(steerConfiguration.derivativeConstant));
+
+        if (steerConfiguration.useInternalAbsoluteEncoderForFeedback) {
+            if (!(absoluteEncoder instanceof SparkAbsoluteEncoder)) {
+                throw new IllegalArgumentException("When using the internal absolute encoder for feedback, the absolute encoder configuration must be a SparkMaxAbsoluteEncoderConfiguration.");
+            }
+            SparkAbsoluteEncoder sparkAbsoluteEncoder = motor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
+            SparkMaxUtils.throwIfError(pidController.setFeedbackDevice(sparkAbsoluteEncoder));
+            feedbackAngleGetter = () -> ContinuousAngle.fromDegrees(sparkAbsoluteEncoder.getPosition());
+        } else {
+            SparkMaxUtils.throwIfError(pidController.setFeedbackDevice(motorEncoder));
+            feedbackAngleGetter = this::getAngle;
+        }
+
+        SparkMaxUtils.throwIfError(pidController.setP(steerConfiguration.proportionalGain));
+        SparkMaxUtils.throwIfError(pidController.setI(steerConfiguration.integralGain));
+        SparkMaxUtils.throwIfError(pidController.setD(steerConfiguration.derivativeGain));
         SparkMaxUtils.throwIfError(motor.burnFlash());
     }
 
@@ -90,9 +109,9 @@ public final class SparkMaxSteerController implements SteerController {
     private static final double ENCODER_RESOLUTION_DEG = 360.0 * (1.0 / 42.0);
     private static final double REFERENCE_TOLERANCE_DEG = ENCODER_RESOLUTION_DEG;
     private boolean isAtReference() {
-        var actualDeg = motor.getEncoder().getPosition();
-        var desiredDeg = referenceAngle.degrees();
-        return Math.abs(desiredDeg - actualDeg) <= REFERENCE_TOLERANCE_DEG;
+        var actualAngleDeg = feedbackAngleGetter.get().degrees();
+        var desiredAngleDeg = referenceAngle.degrees();
+        return MathUtils.areApproxEqual(actualAngleDeg, desiredAngleDeg, REFERENCE_TOLERANCE_DEG);
     }
 
     @Override
