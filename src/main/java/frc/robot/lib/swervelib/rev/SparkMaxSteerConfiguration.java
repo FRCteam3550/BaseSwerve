@@ -11,21 +11,24 @@ public class SparkMaxSteerConfiguration implements SteerConfiguration{
 
     public final double nominalVoltage;
     public final double currentLimit;
-    public final double proportionalConstant;
-    public final double integralConstant;
-    public final double derivativeConstant;
+    public final double proportionalGain;
+    public final double integralGain;
+    public final double derivativeGain;
+    public final boolean useInternalAbsoluteEncoderForFeedback;
 
     public SparkMaxSteerConfiguration(
         double nominalVoltage,
         double currentLimit,
-        double proportionalConstant,
-        double integralConstant,
-        double derivativeConstant) {
+        double proportionalGain,
+        double integralGain,
+        double derivativeGain,
+        boolean useInternalAbsoluteEncoderForFeedback) {
         this.nominalVoltage = nominalVoltage;
         this.currentLimit = currentLimit;
-        this.proportionalConstant = proportionalConstant;
-        this.integralConstant = integralConstant;
-        this.derivativeConstant = derivativeConstant;
+        this.proportionalGain = proportionalGain;
+        this.integralGain = integralGain;
+        this.derivativeGain = derivativeGain;
+        this.useInternalAbsoluteEncoderForFeedback = useInternalAbsoluteEncoderForFeedback;
     }
 
     public SparkMaxSteerConfiguration() {
@@ -34,7 +37,8 @@ public class SparkMaxSteerConfiguration implements SteerConfiguration{
                 DEFAULT_CURRENT_LIMIT,
                 Double.NaN,
                 Double.NaN,
-                Double.NaN
+                Double.NaN,
+                false
         );
     }
 
@@ -50,9 +54,10 @@ public class SparkMaxSteerConfiguration implements SteerConfiguration{
         return new SparkMaxSteerConfiguration(
                 nominalVoltage,
                 this.currentLimit,
-                this.proportionalConstant,
-                this.integralConstant,
-                this.derivativeConstant
+                this.proportionalGain,
+                this.integralGain,
+                this.derivativeGain,
+                this.useInternalAbsoluteEncoderForFeedback
         );
     }
 
@@ -64,25 +69,38 @@ public class SparkMaxSteerConfiguration implements SteerConfiguration{
         return new SparkMaxSteerConfiguration(
                 this.nominalVoltage,
                 currentLimit,
-                this.proportionalConstant,
-                this.integralConstant,
-                this.derivativeConstant
+                this.proportionalGain,
+                this.integralGain,
+                this.derivativeGain,
+                this.useInternalAbsoluteEncoderForFeedback
         );
     }
 
-    public SparkMaxSteerConfiguration withPidConstants(double proportional, double integral, double derivative) {
+    public SparkMaxSteerConfiguration withPidGains(double proportional, double integral, double derivative) {
         return new SparkMaxSteerConfiguration(
                 this.nominalVoltage,
                 this.currentLimit,
                 proportional,
                 integral,
-                derivative
+                derivative,
+                this.useInternalAbsoluteEncoderForFeedback
         );
     }
 
-    public void ensureHasPidConstants() {
-        if (!Double.isFinite(proportionalConstant) || !Double.isFinite(integralConstant) || !Double.isFinite(derivativeConstant)) {
-            throw new IllegalArgumentException("You must define PID parameter for a SparkMaxSteerConfiguration using .withPidConstants()");
+    public SparkMaxSteerConfiguration useInternalAbsoluteEncoderForFeedback() {
+        return new SparkMaxSteerConfiguration(
+                this.nominalVoltage,
+                this.currentLimit,
+                this.proportionalGain,
+                this.integralGain,
+                this.derivativeGain,
+                true
+        );
+    }
+
+    public void ensureHasPidGains() {
+        if (!Double.isFinite(proportionalGain) || !Double.isFinite(integralGain) || !Double.isFinite(derivativeGain)) {
+            throw new IllegalArgumentException("You must define PID gains for a SparkMaxSteerConfiguration using .withPidGains()");
         }
     }
 }

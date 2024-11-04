@@ -24,26 +24,20 @@ public final class TalonFXSteerController implements SteerController {
     private ContinuousAngle referenceAngle = ContinuousAngle.fromDegrees(0.0);
 
     public TalonFXSteerController(int motorCanId, TalonFXSteerConfiguration steerConfiguration, GearRatio gearRatio, AbsoluteEncoder absoluteEncoder) {
-        steerConfiguration.ensureHasPidConstants();
+        steerConfiguration.ensureHasPidGains();
         steerMotorToMechanismReduction = gearRatio.steerMotorToMechanismReduction;
         this.absoluteEncoder = absoluteEncoder;
 
         final TalonFXConfiguration motorConfiguration = new TalonFXConfiguration();
-        motorConfiguration.Slot0.kP = steerConfiguration.proportionalConstant;
-        motorConfiguration.Slot0.kI = steerConfiguration.integralConstant;
-        motorConfiguration.Slot0.kD = steerConfiguration.derivativeConstant;
+        motorConfiguration.Slot0.kP = steerConfiguration.proportionalGain;
+        motorConfiguration.Slot0.kI = steerConfiguration.integralGain;
+        motorConfiguration.Slot0.kD = steerConfiguration.derivativeGain;
         if (steerConfiguration.hasCurrentLimit()) {
             motorConfiguration.CurrentLimits.SupplyCurrentLimit = steerConfiguration.currentLimit;
             motorConfiguration.CurrentLimits.SupplyCurrentLimitEnable = true;
         }
 
         motor = new TalonFX(motorCanId);
-
-        motorConfiguration.Feedback.withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor);
-        motorConfiguration.MotorOutput.Inverted = gearRatio.steerInverted ? InvertedValue.CounterClockwise_Positive : InvertedValue.Clockwise_Positive;
-        motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        motorConfiguration.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.03;
-        TalonFXUtils.throwIfError(motor.getConfigurator().apply(motorConfiguration));
 
         final double appliedMotAngleRot = absoluteEncoder.getAbsoluteAngle().rotations() / steerMotorToMechanismReduction; // rotations du mecanisme
         TalonFXUtils.throwIfError(motor.getPosition().setUpdateFrequency(20, CAN_TIMEOUT_S)); // rotations du moteur
@@ -52,6 +46,20 @@ public final class TalonFXSteerController implements SteerController {
             SETTINGS_APPLIED_WAIT_TIMEOUT_MS, 
             () -> MathUtils.areApproxEqual(appliedMotAngleRot, motor.getPosition().getValueAsDouble()) // rotations du moteur
         );
+
+
+
+
+        motorConfiguration.Feedback.withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor);
+
+
+
+
+        motorConfiguration.MotorOutput.Inverted = gearRatio.steerInverted ? InvertedValue.CounterClockwise_Positive : InvertedValue.Clockwise_Positive;
+        motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+        motorConfiguration.ClosedLoopRamps.VoltageClosedLoopRampPeriod = 0.03;
+        TalonFXUtils.throwIfError(motor.getConfigurator().apply(motorConfiguration));
+
     }
 
     @Override
