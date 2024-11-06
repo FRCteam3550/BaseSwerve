@@ -152,8 +152,8 @@ public class KrakenMk4Drivetrain extends SubsystemBase {
     public Command drive() {
        return run(() -> {
             var chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(
-                gamepad.getLeftX() * MAX_SPEED_MS,
                 -gamepad.getLeftY() * MAX_SPEED_MS,
+                -gamepad.getLeftX() * MAX_SPEED_MS,
                 -gamepad.getRightX() * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
                 getGyroscopeRotation()
             );

@@ -28,22 +28,22 @@ public class MaxSwerveDrivetrain extends SubsystemBase {
     private static final int FRONT_LEFT_MODULE_DRIVE_MOTOR_ID = 8;
     private static final int FRONT_LEFT_MODULE_STEER_MOTOR_ID = 6;
     private static final int FRONT_LEFT_MODULE_STEER_ENCODER_ID = 6;
-    private static final DiscreetAngle FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(45.25+180); // -90
+    private static final DiscreetAngle FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(44.6 + 180);
 
     private static final int FRONT_RIGHT_MODULE_DRIVE_MOTOR_ID = 7;
     private static final int FRONT_RIGHT_MODULE_STEER_MOTOR_ID = 5;
     private static final int FRONT_RIGHT_MODULE_STEER_ENCODER_ID = 5;
-    private static final DiscreetAngle FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(240.5); // 180
+    private static final DiscreetAngle FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(58.25 + 180);
 
     private static final int BACK_LEFT_MODULE_DRIVE_MOTOR_ID = 2;
     private static final int BACK_LEFT_MODULE_STEER_MOTOR_ID = 4;
     private static final int BACK_LEFT_MODULE_STEER_ENCODER_ID = 4;
-    private static final DiscreetAngle BACK_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(59+180); // 180
+    private static final DiscreetAngle BACK_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(60.4 + 180);
 
     private static final int BACK_RIGHT_MODULE_DRIVE_MOTOR_ID = 1;
     private static final int BACK_RIGHT_MODULE_STEER_MOTOR_ID = 3;
     private static final int BACK_RIGHT_MODULE_STEER_ENCODER_ID = 3;
-    private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(216); // -90
+    private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(34.75 + 180);
 
     private static final double FRONT_SIDE_M = .47;
     private static final double RIGHT_SIDE_M = .47;
@@ -164,8 +164,8 @@ public class MaxSwerveDrivetrain extends SubsystemBase {
     public Command drive() {
        return run(() -> {
             var chassisSpeed = ChassisSpeeds.fromFieldRelativeSpeeds(
-                gamepad.getLeftX() * 0.2 * MAX_SPEED_MS,
-                -gamepad.getLeftY() * 0.2 * MAX_SPEED_MS,
+                gamepad.getLeftY() * 0.2 * MAX_SPEED_MS,
+                -gamepad.getLeftX() * 0.2 * MAX_SPEED_MS,
                 -gamepad.getRightX() * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
                 getGyroscopeRotation()
             );
