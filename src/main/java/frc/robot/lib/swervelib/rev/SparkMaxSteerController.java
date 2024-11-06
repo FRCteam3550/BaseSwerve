@@ -30,8 +30,8 @@ public final class SparkMaxSteerController implements SteerController {
         steerConfiguration.ensureHasPidConstants();
         this.absoluteEncoder = absoluteEncoder;
 
-        motor = SparkMaxUtils.getController(motorCanId);
-        SparkMaxUtils.throwIfError(motor.restoreFactoryDefaults());
+        motor = SparkMaxUtils.getController(motorCanId); // Already reset to factory defaults
+        SparkMaxUtils.throwIfError(motor.clearFaults());
         SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus0, 100));
         SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus1, 20));
         SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus2, 20));
@@ -49,6 +49,7 @@ public final class SparkMaxSteerController implements SteerController {
         double positionToDegreesRatio = 360 * gearRatio.steerMotorToMechanismReduction;
         SparkMaxUtils.throwIfError(motorEncoder.setPositionConversionFactor(positionToDegreesRatio));        
         SystemUtils.waitUntil(
+            "setPositionConversionFactor for steer encoder " + motorCanId,
             SETTINGS_APPLIED_WAIT_TIMEOUT_MS,
             () -> MathUtils.areApproxEqual(positionToDegreesRatio, motorEncoder.getPositionConversionFactor())
         );

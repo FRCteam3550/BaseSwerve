@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -28,22 +29,22 @@ public class MaxSwerveDrivetrain extends SubsystemBase {
     private static final int FRONT_LEFT_MODULE_DRIVE_MOTOR_ID = 8;
     private static final int FRONT_LEFT_MODULE_STEER_MOTOR_ID = 6;
     private static final int FRONT_LEFT_MODULE_STEER_ENCODER_ID = 6;
-    private static final DiscreetAngle FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(45.25+180); // -90
+    private static final DiscreetAngle FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(132);//132
 
     private static final int FRONT_RIGHT_MODULE_DRIVE_MOTOR_ID = 7;
     private static final int FRONT_RIGHT_MODULE_STEER_MOTOR_ID = 5;
     private static final int FRONT_RIGHT_MODULE_STEER_ENCODER_ID = 5;
-    private static final DiscreetAngle FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(240.5); // 180
+    private static final DiscreetAngle FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(118.3);//118.3
 
     private static final int BACK_LEFT_MODULE_DRIVE_MOTOR_ID = 2;
     private static final int BACK_LEFT_MODULE_STEER_MOTOR_ID = 4;
     private static final int BACK_LEFT_MODULE_STEER_ENCODER_ID = 4;
-    private static final DiscreetAngle BACK_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(59+180); // 180
+    private static final DiscreetAngle BACK_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(115);//115
 
     private static final int BACK_RIGHT_MODULE_DRIVE_MOTOR_ID = 1;
     private static final int BACK_RIGHT_MODULE_STEER_MOTOR_ID = 3;
     private static final int BACK_RIGHT_MODULE_STEER_ENCODER_ID = 3;
-    private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(216); // -90
+    private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(144);//144.3
 
     private static final double FRONT_SIDE_M = .47;
     private static final double RIGHT_SIDE_M = .47;
@@ -85,6 +86,7 @@ public class MaxSwerveDrivetrain extends SubsystemBase {
     private static final double STEER_POS_D = 0.2;
 
     private final AHRS navx = Navx.newReadyNavx(); // NavX connected over MXP
+    private double navxInitialAngle = 0;
 
     private final SwerveDrive swerveDrive = new SwerveDrive(
         new SwerveModuleConfiguration( 
@@ -127,6 +129,7 @@ public class MaxSwerveDrivetrain extends SubsystemBase {
 
     public MaxSwerveDrivetrain(CommandXboxController gamepad) {
         this.gamepad = gamepad;
+        navxInitialAngle = navx.getFusedHeading();
         setDefaultCommand(drive());
 
         for(var location : ModuleLocation.values()) {
@@ -136,7 +139,9 @@ public class MaxSwerveDrivetrain extends SubsystemBase {
         ShuffleboardLayout layout = MODULE_TAB.getLayout("Drivetrain", BuiltInLayouts.kList)
             .withSize(2, 4)
             .withPosition(8, 0);
-        layout.addDouble("Navx angle D", () -> getGyroscopeRotation().getDegrees());
+        layout.addDouble("Navx init angle D", () -> navxInitialAngle);
+        layout.addDouble("Navx raw angle D", () -> navx.getFusedHeading());
+        layout.addDouble("Navx norm angle D", () -> getGyroscopeRotation().getDegrees());
     }
 
     private static final ShuffleboardTab MODULE_TAB = Shuffleboard.getTab("Modules states");
@@ -154,18 +159,17 @@ public class MaxSwerveDrivetrain extends SubsystemBase {
         layout.addDouble("Diff encoder", () -> swerveDrive.getSteerAbsoluteAngle(module).degrees() - swerveDrive.getSteerAngle(module).degrees());
     }
 
-    /**
-     * Retourne l'angle du Gyromètre dans l'intervalle [0, 360]
-     */
     private Rotation2d getGyroscopeRotation() {
-        return Rotation2d.fromDegrees(360 - navx.getFusedHeading());
+        return Rotation2d.fromDegrees(-(navx.getFusedHeading() - navxInitialAngle));
     }
 
     public Command drive() {
        return run(() -> {
+            SmartDashboard.putNumber("JoyAngleDeg", Math.toDegrees(Math.atan(-gamepad.getLeftX()/-gamepad.getLeftY())));
+
             var chassisSpeed = ChassisSpeeds.fromFieldRelativeSpeeds(
-                gamepad.getLeftX() * 0.2 * MAX_SPEED_MS,
                 -gamepad.getLeftY() * 0.2 * MAX_SPEED_MS,
+                -gamepad.getLeftX() * 0.2 * MAX_SPEED_MS,
                 -gamepad.getRightX() * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
                 getGyroscopeRotation()
             );
@@ -176,9 +180,7 @@ public class MaxSwerveDrivetrain extends SubsystemBase {
     }
 
     public Command steerAllWheelsAtRestTo(Rotation2d angle) {
-        return run(() -> swerveDrive.steerAllWheelsAtRestTo(angle))
-            .withTimeout(1)
-            .andThen(() -> swerveDrive.stop());
+        return run(() -> swerveDrive.steerAllWheelsAtRestTo(angle));
     }
 
     @Override

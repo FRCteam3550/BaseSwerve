@@ -18,8 +18,8 @@ public final class SparkMaxDriveController implements DriveController {
     private double metersPerMotorRotation;
 
     public SparkMaxDriveController(int motorCanId, SparkMaxDriveConfiguration configuration, GearRatio gearRatio, double maxSpeedMS) {
-        motor = SparkMaxUtils.getController(motorCanId);
-        SparkMaxUtils.throwIfError(motor.restoreFactoryDefaults());
+        motor = SparkMaxUtils.getController(motorCanId); // Already reset to factory defaults
+        SparkMaxUtils.throwIfError(motor.clearFaults());
         motor.setInverted(gearRatio.driveInverted);
         SparkMaxUtils.throwIfError(motor.setSmartCurrentLimit(38));
 
@@ -36,7 +36,7 @@ public final class SparkMaxDriveController implements DriveController {
         SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus1, 20));
         SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus2, 20));
         // Set neutral mode to brake
-        SparkMaxUtils.throwIfError(motor.setIdleMode(CANSparkMax.IdleMode.kBrake)); //FIXME
+        SparkMaxUtils.throwIfError(motor.setIdleMode(CANSparkMax.IdleMode.kBrake));
 
         // Setup absoluteEncoder
         encoder = motor.getEncoder();

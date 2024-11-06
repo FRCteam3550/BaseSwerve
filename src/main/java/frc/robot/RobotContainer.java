@@ -1,5 +1,6 @@
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.MaxSwerveDrivetrain;
@@ -9,6 +10,11 @@ public class RobotContainer {
     @SuppressWarnings("unused")
     // private final KrakenMk4Drivetrain drivetrain = new KrakenMk4Drivetrain(pilotGamepad);
     private final MaxSwerveDrivetrain drivetrain = new MaxSwerveDrivetrain(pilotGamepad);
+
+    public RobotContainer() {
+        pilotGamepad.a().whileTrue(drivetrain.steerAllWheelsAtRestTo(Rotation2d.fromDegrees(0)));
+        pilotGamepad.b().whileTrue(drivetrain.steerAllWheelsAtRestTo(Rotation2d.fromDegrees(15)));
+    }
 
     public Command getAutonomousCommand() {
         return null;

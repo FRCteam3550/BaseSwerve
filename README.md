@@ -53,6 +53,10 @@ The following things must be adjusted to your robot and module's specific parame
     );
 ```
 ​
+0. Verify the direction of all angles. A positive angle should be anti-clockwise. Angle to verify: gyro, absolute encoders, motor encoders. Manually turn the robot or the wheel to verify. Adjust inversions:
+   - Gyro: adjust sign in the drivetrain's `getGyroscopeRotation()` method.
+   - Absolute angle: in the `AbsoluteEncoderConfiguration`.
+   - Drive or steer motor encoders: in the `GearRatio`. 
 1. Each of your module's component CAN IDs and initial angle. Set initial angle to 0 to start with, and then follow below instructions for measuring initial angles.
 2. Gear ratios and wheel circumference. Constants for Swerve Drive Specialties MK4 L1 to L4 are already given. For other setups, create a `new GearRatio()` with approriate values. This is used for steer control and odometry.
 3. Type of drive motor controller and encoder in each module (`TalonFXDriveConfiguration` and `SparkMaxDriveConfiguration` are built in, you can create others).
@@ -69,6 +73,8 @@ Then, make sure to setup telemetry, and in particular, make sure to display, for
 * The steer encoder's angle, as well as its PID set point, through `swerveDrive.getSteerAngle(module)` and `swerveDrive.getSteerReferenceAngle(module)`.
 * The drive wheel speed, through `swerveDrive.getDriveSpeedMS(module)`
 ​
+Note: the SparkMax will require 2 restart of the robot code for the initial angles to be registered initially.
+
 ### Measuring and adjusting parameters
 ​
 #### 1 - Initial angles

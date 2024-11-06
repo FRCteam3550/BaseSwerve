@@ -49,6 +49,7 @@ public final class TalonFXSteerController implements SteerController {
         TalonFXUtils.throwIfError(motor.getPosition().setUpdateFrequency(20, CAN_TIMEOUT_S)); // rotations du moteur
         TalonFXUtils.throwIfError(motor.setPosition(appliedMotAngleRot, CAN_TIMEOUT_S)); // rotations du moteur
         SystemUtils.waitUntil(
+            "setPosition for steer encoder " + motorCanId,
             SETTINGS_APPLIED_WAIT_TIMEOUT_MS, 
             () -> MathUtils.areApproxEqual(appliedMotAngleRot, motor.getPosition().getValueAsDouble()) // rotations du moteur
         );
