@@ -58,46 +58,46 @@ public class SwerveModule {
         return driveController.getOutput();
     }
 
-    public void setOpenLoopSpeed(double drivePct, DiscreetAngle steerAngleRadians) {
-        var steerSetPoint = getSteerAngleAndDriveSign(steerAngleRadians, getSteerAngle());
+    public void setOpenLoopSpeed(double drivePct, DiscreetAngle steerAngle) {
+        var steerSetPoint = getSteerAngleAndDriveSign(steerAngle, getSteerAngle());
         steerController.setReferenceAngle(steerSetPoint.targetAngle);
         driveController.setOpenLoopSpeed(drivePct * steerSetPoint.driveSign);
     }
 
-    public void setClosedLoopSpeed(double driveMS, DiscreetAngle steerAngleRadians) {
-        var steerSetPoint = getSteerAngleAndDriveSign(steerAngleRadians, getSteerAngle());
+    public void setClosedLoopSpeed(double driveMS, DiscreetAngle steerAngle) {
+        var steerSetPoint = getSteerAngleAndDriveSign(steerAngle, getSteerAngle());
         steerController.setReferenceAngle(steerSetPoint.targetAngle);
         driveController.setClosedLoopSpeed(driveMS * steerSetPoint.driveSign);
     }    
 
     static SteerSetPoint getSteerAngleAndDriveSign(DiscreetAngle targetAngle, ContinuousAngle currentAngle) {
         var driveSign = 1.0;
-        double difference = targetAngle.radians() - currentAngle.asDiscreet().radians();
+        double differenceRadians = targetAngle.radians() - currentAngle.asDiscreet().radians();
 
         // Change the target angle so the difference is in the range [-180, 180) deg instead of [-360, 360) deg
-        if (difference >= Math.PI) {
-            difference -= TWO_PI;
-        } else if (difference < -Math.PI) {
-            difference += TWO_PI;
+        if (differenceRadians >= Math.PI) {
+            differenceRadians -= TWO_PI;
+        } else if (differenceRadians < -Math.PI) {
+            differenceRadians += TWO_PI;
         }
 
         // If the difference is greater than 90 deg or less than -90 deg the drive can be inverted so the total
         // movement of the module is less than 90 deg
-        if (difference > HALF_PI) {
-            difference -= Math.PI;
+        if (differenceRadians > HALF_PI) {
+            differenceRadians -= Math.PI;
             driveSign = -1.0;
-        } else if (difference < -HALF_PI) {
-            difference += Math.PI;
+        } else if (differenceRadians < -HALF_PI) {
+            differenceRadians += Math.PI;
             driveSign = -1.0;
         }
 
         return new SteerSetPoint(
             driveSign, 
-            currentAngle.plus(ContinuousAngle.fromRadians(difference))
+            currentAngle.plus(ContinuousAngle.fromRadians(differenceRadians))
         );
     }
 
-    public SteerController getSteerController() {
-        return steerController;
+    public void periodic() {
+        steerController.periodic();
     }
 }

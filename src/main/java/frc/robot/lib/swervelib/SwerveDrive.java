@@ -7,15 +7,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import frc.robot.lib.swervelib.ctre.CANCoderAbsoluteEncoder;
-import frc.robot.lib.swervelib.ctre.TalonFXDriveConfiguration;
-import frc.robot.lib.swervelib.ctre.TalonFXSteerConfiguration;
-import frc.robot.lib.swervelib.ctre.TalonFXDriveController;
-import frc.robot.lib.swervelib.ctre.TalonFXSteerController;
-import frc.robot.lib.swervelib.rev.SparkMaxDriveConfiguration;
-import frc.robot.lib.swervelib.rev.SparkMaxSteerConfiguration;
-import frc.robot.lib.swervelib.rev.SparkMaxDriveController;
-import frc.robot.lib.swervelib.rev.SparkMaxSteerController;
 
 public class SwerveDrive {
     private final SwerveModule[] modules;
@@ -60,38 +51,15 @@ public class SwerveDrive {
             DriveConfiguration driveConfiguration,
             SteerConfiguration steerConfiguration,
             AbsoluteEncoderConfiguration absoluteEncoderConfiguration) {
+        AbsoluteEncoder absoluteEncoder = absoluteEncoderConfiguration.createAbsoluteEncoder(
+            moduleConfiguration.absoluteEncoderCanId,
+            moduleConfiguration.absoluteEncoderAngleOffset
+        );
 
-        DriveController driveController;
-        SteerController steerController;
-        AbsoluteEncoder absoluteEncoder;
-
-        if (driveConfiguration instanceof TalonFXDriveConfiguration) {
-            driveController = new TalonFXDriveController(moduleConfiguration.driveMotorCanId, (TalonFXDriveConfiguration)driveConfiguration, gearRatio, configuration.maxSpeedMS);
-        }
-        else if (driveConfiguration instanceof SparkMaxDriveConfiguration) {
-            driveController = new SparkMaxDriveController(moduleConfiguration.driveMotorCanId, (SparkMaxDriveConfiguration)driveConfiguration, gearRatio, configuration.maxSpeedMS);
-        }
-        else {
-            throw new IllegalArgumentException("The method does not support the given driveConfiguration class. We only support Neo and Falcon500 motors.");
-        }
-
-        if (absoluteEncoderConfiguration instanceof CANCoderAbsoluteEncoderConfiguration) {
-            absoluteEncoder = new CANCoderAbsoluteEncoder(moduleConfiguration.absoluteEncoderCanId, moduleConfiguration.absoluteEncoderAngleOffset, (CANCoderAbsoluteEncoderConfiguration)absoluteEncoderConfiguration);
-        }
-        else {
-            throw new IllegalArgumentException("The method does not support the given absoluteEncoderConfiguration class. We only support CANCoderAbsoluteEncoder.");
-        }
-
-        if (steerConfiguration instanceof TalonFXSteerConfiguration) {
-            steerController = new TalonFXSteerController(moduleConfiguration.steerMotorCanId, (TalonFXSteerConfiguration)steerConfiguration, gearRatio, absoluteEncoder);
-        }
-        else if (steerConfiguration instanceof SparkMaxSteerConfiguration) {
-            steerController = new SparkMaxSteerController(moduleConfiguration.steerMotorCanId, (SparkMaxSteerConfiguration)steerConfiguration, gearRatio, absoluteEncoder);
-        }
-        else {
-            throw new IllegalArgumentException("The method does not support the given steerConfiguration class. We only support Neo and Falcon500 motors.");
-        }
-        SwerveModule result = new SwerveModule(driveController, steerController);
+        SwerveModule result = new SwerveModule(
+            driveConfiguration.createDriveController(moduleConfiguration.driveMotorCanId, gearRatio, configuration.maxSpeedMS),
+            steerConfiguration.createSteerController(moduleConfiguration.steerMotorCanId, gearRatio, absoluteEncoder)
+        );
         return result;
     }
 
@@ -122,7 +90,7 @@ public class SwerveDrive {
     private void setOpenLoopModuleStates(SwerveModuleState[] states) {
         for (int i = 0; i < modules.length; i++) {
             modules[i].setOpenLoopSpeed(
-                    states[i].speedMetersPerSecond / configuration.maxSpeedMS,
+                    states[i].speedMetersPerSecond / configuration.maxSpeedMS, // Convert to pct
                     DiscreetAngle.fromRotation(states[i].angle));
         }
     }
@@ -164,10 +132,20 @@ public class SwerveDrive {
         setClosedLoopModuleStates(states);
     }
 
+    /* Useful for calibrating pivot PID. You can use this in a command which is orienting the module at some angle. */
+    public void steerAllWheelsAtRestTo(Rotation2d angle) {
+        setOpenLoopModuleStates(new SwerveModuleState[]{
+            new SwerveModuleState(0, angle),
+            new SwerveModuleState(0, angle),
+            new SwerveModuleState(0, angle),
+            new SwerveModuleState(0, angle)
+        });
+    }
+
     public void periodic() {
         odometry.update(configuration.gyroAngleSupplier.get(), getModulePositions());
         for(var module: modules) {
-            module.getSteerController().periodic();
+            module.periodic();
         }
     }
 
@@ -181,7 +159,7 @@ public class SwerveDrive {
 
     /**
      * Get the distance travelled by the given module in the encoder's native units.
-     * SparkMax: motor rotations. TalonFX: ticks (1/2048 rotation).
+     * SparkMax: motor rotations. TalonFX: motor rotations.
      */
     public double getDrivePositionNativeUnits(ModuleLocation moduleLocation) {
         return modules[moduleLocation.index].getDrivePositionNativeUnits();
@@ -201,9 +179,5 @@ public class SwerveDrive {
 
     public ContinuousAngle getSteerReferenceAngle(ModuleLocation moduleLocation) {
         return modules[moduleLocation.index].getSteerReferenceAngle();
-    }
-
-    public SwerveModule getModule(ModuleLocation moduleLocation) {
-        return modules[moduleLocation.index];
     }
 }
