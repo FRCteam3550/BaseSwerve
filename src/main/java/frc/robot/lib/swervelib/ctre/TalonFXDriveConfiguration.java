@@ -4,7 +4,7 @@ import frc.robot.lib.swervelib.DriveConfiguration;
 
 public class TalonFXDriveConfiguration implements DriveConfiguration {
     private static final double DEFAULT_NOMINAL_VOLTAGE = 12;
-    private static final double DEFAULT_CURRENT_LIMIT = 20;
+    private static final double DEFAULT_CURRENT_LIMIT = 40;
 
     public final double nominalVoltage;
     public final double currentLimit;
@@ -15,7 +15,7 @@ public class TalonFXDriveConfiguration implements DriveConfiguration {
     public final double velocityConstant;;
     public final double accelerationConstant;
     public final double staticConstant;
-    public final double ticksPerMeter;
+    public final double rotationsPerMeter;
 
     public TalonFXDriveConfiguration(
         double nominalVoltage,
@@ -27,7 +27,7 @@ public class TalonFXDriveConfiguration implements DriveConfiguration {
         double velocityConstant,
         double accelerationConstant,
         double staticConstant,
-        double ticksPerMeter) {
+        double rotationsPerMeter) {
         this.nominalVoltage = nominalVoltage;
         this.currentLimit = currentLimit;
         this.feedForwardConstant = feedForwardConstant;
@@ -37,7 +37,7 @@ public class TalonFXDriveConfiguration implements DriveConfiguration {
         this.velocityConstant = velocityConstant;
         this.accelerationConstant = accelerationConstant;
         this.staticConstant = staticConstant;
-        this.ticksPerMeter = ticksPerMeter;
+        this.rotationsPerMeter = rotationsPerMeter;
     }
 
     public TalonFXDriveConfiguration() {
@@ -70,7 +70,7 @@ public class TalonFXDriveConfiguration implements DriveConfiguration {
                 this.velocityConstant,
                 this.accelerationConstant,
                 this.staticConstant,
-                this.ticksPerMeter
+                this.rotationsPerMeter
         );
     }
 
@@ -89,7 +89,7 @@ public class TalonFXDriveConfiguration implements DriveConfiguration {
                 this.velocityConstant,
                 this.accelerationConstant,
                 this.staticConstant,
-                this.ticksPerMeter
+                this.rotationsPerMeter
         );
     }
 
@@ -104,7 +104,7 @@ public class TalonFXDriveConfiguration implements DriveConfiguration {
                 this.velocityConstant,
                 this.accelerationConstant,
                 this.staticConstant,
-                this.ticksPerMeter
+                this.rotationsPerMeter
         );
     }
 
@@ -119,11 +119,11 @@ public class TalonFXDriveConfiguration implements DriveConfiguration {
                 this.velocityConstant,
                 this.accelerationConstant,
                 this.staticConstant,
-                this.ticksPerMeter
+                this.rotationsPerMeter
         );
     }
 
-    public TalonFXDriveConfiguration withTicksPerMeter(double ticksPerMeter) {
+    public TalonFXDriveConfiguration withRotationsPerMeter(double rotationsPerMeter) {
         return new TalonFXDriveConfiguration(
                 this.nominalVoltage,
                 this.currentLimit,
@@ -134,7 +134,7 @@ public class TalonFXDriveConfiguration implements DriveConfiguration {
                 this.velocityConstant,
                 this.accelerationConstant,
                 this.staticConstant,
-                ticksPerMeter
+                rotationsPerMeter
         );
     }
 
@@ -153,7 +153,7 @@ public class TalonFXDriveConfiguration implements DriveConfiguration {
                 velocityConstant,
                 accelerationConstant,
                 staticConstant,
-                this.ticksPerMeter
+                this.rotationsPerMeter
         );
     }
 

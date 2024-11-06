@@ -8,4 +8,8 @@ public interface SteerController {
     ContinuousAngle getAngle();
 
     DiscreetAngle getAbsoluteAngle();
+
+    double getOutput();
+
+    void periodic();
 }

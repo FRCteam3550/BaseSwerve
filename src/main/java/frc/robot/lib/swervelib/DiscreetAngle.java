@@ -31,11 +31,19 @@ public class DiscreetAngle {
         return fromDegrees(rotation.getDegrees());
     }
 
+    public static DiscreetAngle fromRotations(double rotations) {
+        return fromDegrees(rotations * 360.0);
+    }
+
     public double radians() {
         return angleRadians;
     }
 
     public double degrees() {
         return angleDegrees;
+    }
+    
+    public double rotations() {
+        return angleDegrees / 360.0;
     }
 }

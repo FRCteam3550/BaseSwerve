@@ -1,5 +1,8 @@
 package frc.robot.lib.swervelib;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
+
 public class SwerveModule {
     private final DriveController driveController;
     private final SteerController steerController;
@@ -10,6 +13,13 @@ public class SwerveModule {
                                SteerController steerController) {
         this.driveController = driveController;
         this.steerController = steerController;
+    }
+
+    public SwerveModuleState getState() {
+        return new SwerveModuleState(
+            getDriveSpeedMS(),
+            Rotation2d.fromRadians(getSteerAngle().radians())
+        );
     }
 
     public DiscreetAngle getSteerAbsoluteAngle() {
@@ -38,6 +48,14 @@ public class SwerveModule {
 
     public ContinuousAngle getSteerReferenceAngle() {
         return steerController.getReferenceAngle();
+    }
+
+    public double getSteerOuptut() {
+        return steerController.getOutput();
+    }
+
+    public double getDriveOuptut() {
+        return driveController.getOutput();
     }
 
     public void setOpenLoopSpeed(double drivePct, DiscreetAngle steerAngleRadians) {
@@ -77,5 +95,9 @@ public class SwerveModule {
             driveSign, 
             currentAngle.plus(ContinuousAngle.fromRadians(difference))
         );
+    }
+
+    public SteerController getSteerController() {
+        return steerController;
     }
 }

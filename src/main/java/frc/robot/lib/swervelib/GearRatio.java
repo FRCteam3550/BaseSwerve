@@ -12,7 +12,7 @@ package frc.robot.lib.swervelib;
  *                       should result in wheel rotations.
  * @param driveInverted  Whether the drive motor should be inverted. If there is an odd number of gea reductions
  *                       this is typically true.
- * @param steerReduction The overall steer reduction of the module. Multiplying motor rotations by this value
+ * @param steerMotorToMechanismReduction The overall steer reduction of the module. Multiplying motor rotations by this value
  *                       should result in rotations of the steering pulley.
  * @param steerInverted  Whether the steer motor should be inverted. If there is an odd number of gear reductions
  *                       this is typically true.
@@ -21,18 +21,18 @@ public class GearRatio {
     public final double wheelCircumferenceM;
     public final double driveReduction;
     public final boolean driveInverted;
-    public final double steerReduction;
+    public final double steerMotorToMechanismReduction;
     public final boolean steerInverted;
 
     public GearRatio(double wheelCircumferenceM, double driveReduction, boolean driveInverted, double steerReduction, boolean steerInverted) {
         this.wheelCircumferenceM = wheelCircumferenceM;
         this.driveReduction = driveReduction;
         this.driveInverted = driveInverted;
-        this.steerReduction = steerReduction;
+        this.steerMotorToMechanismReduction = steerReduction;
         this.steerInverted = steerInverted;
     }
 
     public GearRatio withWheelCircumference(double wheelCircumferenceM) {
-        return new GearRatio(wheelCircumferenceM, driveReduction, driveInverted, steerReduction, steerInverted);
+        return new GearRatio(wheelCircumferenceM, driveReduction, driveInverted, steerMotorToMechanismReduction, steerInverted);
     }
 }

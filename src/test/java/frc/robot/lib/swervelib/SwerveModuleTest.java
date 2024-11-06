@@ -1,4 +1,5 @@
 package frc.robot.lib.swervelib;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,7 +13,7 @@ public class SwerveModuleTest {
         assertEquals(expectedDriveSign, actual.driveSign);
     }
 
-    static  SteerSetPoint getSteerAngleAndDriveSign(double targetAngleDegrees, double currentAngleDegrees) {
+    static SteerSetPoint getSteerAngleAndDriveSign(double targetAngleDegrees, double currentAngleDegrees) {
         return SwerveModule.getSteerAngleAndDriveSign(
             DiscreetAngle.fromDegrees(targetAngleDegrees),
             ContinuousAngle.fromDegrees(currentAngleDegrees)

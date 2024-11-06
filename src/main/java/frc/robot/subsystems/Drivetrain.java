@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.lib.Navx;
 import frc.robot.lib.swervelib.*;
-import frc.robot.lib.swervelib.ctre.CANCoderAbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXDriveConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXSteerConfiguration;
 
@@ -38,32 +37,31 @@ public class Drivetrain extends SubsystemBase {
     private static final double BACK_LEFT_MODULE_X_M = -BACK_SIDE_M / 2;
     private static final double BACK_LEFT_MODULE_Y_M = LEFT_SIDE_M / 2;
 
-    private static final double STEERPOS_P = .75;
+    private static final double STEERPOS_P = 12.3550; // .75
     private static final double STEERPOS_I = 0;
-    private static final double STEERPOS_D = 2;
-
+    private static final double STEERPOS_D = 0; // 2
     private static final double MAX_SPEED_MS = 4.786;
 
     // CAN IDs
     private static final int FRONT_LEFT_MODULE_DRIVE_MOTOR_ID = 3;
     private static final int FRONT_LEFT_MODULE_STEER_MOTOR_ID = 7;
     private static final int FRONT_LEFT_MODULE_STEER_ENCODER_ID = 9;
-    private static final DiscreetAngle FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(63.38);
+    private static final DiscreetAngle FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(242.842);
 
     private static final int FRONT_RIGHT_MODULE_DRIVE_MOTOR_ID = 1;
     private static final int FRONT_RIGHT_MODULE_STEER_MOTOR_ID = 5;
     private static final int FRONT_RIGHT_MODULE_STEER_ENCODER_ID = 12;
-    private static final DiscreetAngle FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(13.65);
+    private static final DiscreetAngle FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(193.799);
 
     private static final int BACK_LEFT_MODULE_DRIVE_MOTOR_ID = 2;
     private static final int BACK_LEFT_MODULE_STEER_MOTOR_ID = 8;
     private static final int BACK_LEFT_MODULE_STEER_ENCODER_ID = 11;
-    private static final DiscreetAngle BACK_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(352.79);
+    private static final DiscreetAngle BACK_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(174.375);
 
     private static final int BACK_RIGHT_MODULE_DRIVE_MOTOR_ID = 6;
     private static final int BACK_RIGHT_MODULE_STEER_MOTOR_ID = 4;
     private static final int BACK_RIGHT_MODULE_STEER_ENCODER_ID = 0;
-    private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(212.69);
+    private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(32.520);
 
     // FIXME Measure the drivetrain's maximum velocity or calculate the theoretical.
     // The formula for calculating the theoretical maximum velocity is:
@@ -173,7 +171,7 @@ public class Drivetrain extends SubsystemBase {
                     -gamepad.getRightX() * MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND,
                     getGyroscopeRotation()));
         })
-            .andThen(() -> swerveDrive.stop());
+        .andThen(() -> swerveDrive.stop());
     }
 
     @Override
