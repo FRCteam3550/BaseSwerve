@@ -43,25 +43,25 @@ public class Drivetrain extends SubsystemBase {
     private static final double MAX_SPEED_MS = 4.786;
 
     // CAN IDs
-    public static final int FRONT_LEFT_MODULE_DRIVE_MOTOR_ID = 3;
-    public static final int FRONT_LEFT_MODULE_STEER_MOTOR_ID = 7;
-    public static final int FRONT_LEFT_MODULE_STEER_ENCODER_ID = 9;
-    public static final DiscreetAngle FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(242.842);
+    private static final int FRONT_LEFT_MODULE_DRIVE_MOTOR_ID = 3;
+    private static final int FRONT_LEFT_MODULE_STEER_MOTOR_ID = 7;
+    private static final int FRONT_LEFT_MODULE_STEER_ENCODER_ID = 9;
+    private static final DiscreetAngle FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(242.842);
 
-    public static final int FRONT_RIGHT_MODULE_DRIVE_MOTOR_ID = 1;
-    public static final int FRONT_RIGHT_MODULE_STEER_MOTOR_ID = 5;
-    public static final int FRONT_RIGHT_MODULE_STEER_ENCODER_ID = 12;
-    public static final DiscreetAngle FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(193.799);
+    private static final int FRONT_RIGHT_MODULE_DRIVE_MOTOR_ID = 1;
+    private static final int FRONT_RIGHT_MODULE_STEER_MOTOR_ID = 5;
+    private static final int FRONT_RIGHT_MODULE_STEER_ENCODER_ID = 12;
+    private static final DiscreetAngle FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(193.799);
 
-    public static final int BACK_LEFT_MODULE_DRIVE_MOTOR_ID = 2;
-    public static final int BACK_LEFT_MODULE_STEER_MOTOR_ID = 8;
-    public static final int BACK_LEFT_MODULE_STEER_ENCODER_ID = 11;
-    public static final DiscreetAngle BACK_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(174.375);
+    private static final int BACK_LEFT_MODULE_DRIVE_MOTOR_ID = 2;
+    private static final int BACK_LEFT_MODULE_STEER_MOTOR_ID = 8;
+    private static final int BACK_LEFT_MODULE_STEER_ENCODER_ID = 11;
+    private static final DiscreetAngle BACK_LEFT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(174.375);
 
-    public static final int BACK_RIGHT_MODULE_DRIVE_MOTOR_ID = 6;
-    public static final int BACK_RIGHT_MODULE_STEER_MOTOR_ID = 4;
-    public static final int BACK_RIGHT_MODULE_STEER_ENCODER_ID = 0;
-    public static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(32.520);
+    private static final int BACK_RIGHT_MODULE_DRIVE_MOTOR_ID = 6;
+    private static final int BACK_RIGHT_MODULE_STEER_MOTOR_ID = 4;
+    private static final int BACK_RIGHT_MODULE_STEER_ENCODER_ID = 0;
+    private static final DiscreetAngle BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE = DiscreetAngle.fromDegrees(32.520);
 
     // FIXME Measure the drivetrain's maximum velocity or calculate the theoretical.
     // The formula for calculating the theoretical maximum velocity is:
