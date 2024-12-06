@@ -3,21 +3,6 @@
     "transitory": {
       "Shuffleboard": {
         "Modules states": {
-          "Back left module": {
-            "open": true
-          },
-          "Back right module": {
-            "open": true
-          },
-          "Drivetrain": {
-            "open": true
-          },
-          "Front left module": {
-            "open": true
-          },
-          "Front right module": {
-            "open": true
-          },
           "open": true
         },
         "open": true

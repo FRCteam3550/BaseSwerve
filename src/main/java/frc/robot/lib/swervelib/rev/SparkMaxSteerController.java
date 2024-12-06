@@ -1,6 +1,7 @@
 package frc.robot.lib.swervelib.rev;
 
 import com.revrobotics.CANSparkMax;
+
 import com.revrobotics.CANSparkBase;
 
 import com.revrobotics.RelativeEncoder;
@@ -70,7 +71,12 @@ public final class SparkMaxSteerController implements SteerController {
     @Override
     public void setReferenceAngle(ContinuousAngle referenceAngle) {
         this.referenceAngle = referenceAngle;
-        pidController.setReference(referenceAngle.degrees(), CANSparkBase.ControlType.kPosition);
+        if (isAtReference()) {
+            motor.stopMotor();
+        }
+        else {
+            pidController.setReference(referenceAngle.degrees(), CANSparkBase.ControlType.kPosition);
+        }
     }
 
     @Override
@@ -91,15 +97,14 @@ public final class SparkMaxSteerController implements SteerController {
     private static final double ENCODER_RESOLUTION_DEG = 360.0 * (1.0 / 42.0);
     private static final double REFERENCE_TOLERANCE_DEG = ENCODER_RESOLUTION_DEG;
     private boolean isAtReference() {
-        var actualDeg = motor.getEncoder().getPosition();
-        var desiredDeg = referenceAngle.degrees();
-        return Math.abs(desiredDeg - actualDeg) <= REFERENCE_TOLERANCE_DEG;
+        return MathUtils.areApproxEqual(
+            motor.getEncoder().getPosition(),
+            referenceAngle.degrees(),
+            REFERENCE_TOLERANCE_DEG
+        );
     }
 
     @Override
     public void periodic() {
-        if (isAtReference()) {
-            motor.stopMotor();
-        }
     }
 }

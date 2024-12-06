@@ -2,7 +2,6 @@ package frc.robot.lib.swervelib.rev;
 
 import com.revrobotics.SparkAbsoluteEncoder.Type;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.lib.SparkMaxUtils;
 import frc.robot.lib.SystemUtils;
 import frc.robot.lib.swervelib.AbsoluteEncoder;
@@ -32,7 +31,6 @@ public class SparkMaxAbsoluteEncoder implements AbsoluteEncoder {
         );
         // setZeroOffset() does not accept negative values, so to invert the angle, we substract from 1.0 if inverted.
         final var alignAngleRots = configuration.inverted ? 1.0 - alignAngle.rotations() : alignAngle.rotations();
-        SmartDashboard.putNumber("Enc init deg " + motorCanId, encoder.getPosition() * ROT_TO_DEGREES);
         SparkMaxUtils.throwIfError(encoder.setZeroOffset(alignAngleRots));
         SystemUtils.waitEqual(
             "setZeroOffset for abs encoder " + motorCanId,

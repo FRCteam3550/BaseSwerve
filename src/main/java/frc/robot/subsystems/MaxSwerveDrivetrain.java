@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -165,8 +164,6 @@ public class MaxSwerveDrivetrain extends SubsystemBase {
 
     public Command drive() {
        return run(() -> {
-            SmartDashboard.putNumber("JoyAngleDeg", Math.toDegrees(Math.atan(-gamepad.getLeftX()/-gamepad.getLeftY())));
-
             var chassisSpeed = ChassisSpeeds.fromFieldRelativeSpeeds(
                 -gamepad.getLeftY() * 0.2 * MAX_SPEED_MS,
                 -gamepad.getLeftX() * 0.2 * MAX_SPEED_MS,
