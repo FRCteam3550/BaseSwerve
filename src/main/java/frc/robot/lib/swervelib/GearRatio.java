@@ -10,12 +10,11 @@ package frc.robot.lib.swervelib;
  * @param wheelCircumferenceM  The distance the module's wheel travel per turn in meters.
  * @param driveReduction The overall drive reduction of the module. Multiplying motor rotations by this value
  *                       should result in wheel rotations.
- * @param driveInverted  Whether the drive motor should be inverted. If there is an odd number of gea reductions
- *                       this is typically true.
+ * @param driveInverted  Whether the drive motor should be inverted for the wheels to go forward, robot-wise, when applied a positive speed. 
+ *                       This happens either because there is an odd number of gear reductions or the choosen orientation is pointing the wheels backward.
  * @param steerMotorToMechanismReduction The overall steer reduction of the module. Multiplying motor rotations by this value
  *                       should result in rotations of the steering pulley.
- * @param steerInverted  Whether the steer motor should be inverted. If there is an odd number of gear reductions
- *                       this is typically true.
+ * @param steerInverted  Whether the steer motor should be inverted for a positive speed to result in a counter-clockwise motion.
  */
 public class GearRatio {
     public final double wheelCircumferenceM;

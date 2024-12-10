@@ -1,6 +1,8 @@
 package frc.robot.lib.swervelib.rev;
 
 import frc.robot.lib.swervelib.DriveConfiguration;
+import frc.robot.lib.swervelib.DriveController;
+import frc.robot.lib.swervelib.GearRatio;
 
 public class SparkMaxDriveConfiguration implements DriveConfiguration {
     private static final double DEFAULT_NOMINAL_VOLTAGE = 12;
@@ -41,6 +43,10 @@ public class SparkMaxDriveConfiguration implements DriveConfiguration {
             Double.NaN,
             Double.NaN
         );
+    }
+
+    public DriveController createDriveController(int motorCanId, GearRatio gearRatio, double maxSpeedMS) {
+        return new SparkMaxDriveController(motorCanId, this, gearRatio, maxSpeedMS);
     }
 
     public boolean hasVoltageCompensation() {

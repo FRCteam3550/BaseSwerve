@@ -1,6 +1,9 @@
 package frc.robot.lib.swervelib.ctre;
 
+import frc.robot.lib.swervelib.AbsoluteEncoder;
+import frc.robot.lib.swervelib.GearRatio;
 import frc.robot.lib.swervelib.SteerConfiguration;
+import frc.robot.lib.swervelib.SteerController;
 
 public class TalonFXSteerConfiguration implements SteerConfiguration {
     private static final double DEFAULT_NOMINAL_VOLTAGE = 12;
@@ -11,27 +14,18 @@ public class TalonFXSteerConfiguration implements SteerConfiguration {
     public final double proportionalConstant;
     public final double integralConstant;
     public final double derivativeConstant;
-    public final double velocityConstant;
-    public final double accelerationConstant;
-    public final double staticConstant;
 
     public TalonFXSteerConfiguration(
         double nominalVoltage,
         double currentLimit,
         double proportionalConstant,
         double integralConstant,
-        double derivativeConstant,
-        double velocityConstant,
-        double accelerationConstant,
-        double staticConstant) {
+        double derivativeConstant) {
         this.nominalVoltage = nominalVoltage;
         this.currentLimit = currentLimit;
         this.proportionalConstant = proportionalConstant;
         this.integralConstant = integralConstant;
         this.derivativeConstant = derivativeConstant;
-        this.velocityConstant = velocityConstant;
-        this.accelerationConstant = accelerationConstant;
-        this.staticConstant = staticConstant;
     }
 
     public TalonFXSteerConfiguration() {
@@ -40,11 +34,12 @@ public class TalonFXSteerConfiguration implements SteerConfiguration {
             DEFAULT_CURRENT_LIMIT,
             Double.NaN,
             Double.NaN,
-            Double.NaN,
-            Double.NaN,
-            Double.NaN,
             Double.NaN
         );
+    }
+
+    public SteerController createSteerController(int motorCanId, GearRatio gearRatio, AbsoluteEncoder absoluteEncoder) {
+        return new TalonFXSteerController(motorCanId, this, gearRatio, absoluteEncoder);
     }
 
     public boolean hasVoltageCompensation() {
@@ -57,10 +52,7 @@ public class TalonFXSteerConfiguration implements SteerConfiguration {
                 this.currentLimit,
                 this.proportionalConstant,
                 this.integralConstant,
-                this.derivativeConstant,
-                this.velocityConstant,
-                this.accelerationConstant,
-                this.staticConstant
+                this.derivativeConstant
         );
     }
 
@@ -74,10 +66,7 @@ public class TalonFXSteerConfiguration implements SteerConfiguration {
                 currentLimit,
                 this.proportionalConstant,
                 this.integralConstant,
-                this.derivativeConstant,
-                this.velocityConstant,
-                this.accelerationConstant,
-                this.staticConstant
+                this.derivativeConstant
         );
     }
 
@@ -87,31 +76,13 @@ public class TalonFXSteerConfiguration implements SteerConfiguration {
                 this.currentLimit,
                 proportional,
                 integral,
-                derivative,
-                this.velocityConstant,
-                this.accelerationConstant,
-                this.staticConstant
+                derivative
         );
     }
 
-    public boolean hasPidConstants() {
-        return Double.isFinite(proportionalConstant) && Double.isFinite(integralConstant) && Double.isFinite(derivativeConstant);
-    }
-
-    public TalonFXSteerConfiguration withMotionMagic(double velocityConstant, double accelerationConstant, double staticConstant) {
-        return new TalonFXSteerConfiguration(
-                this.nominalVoltage,
-                this.currentLimit,
-                this.proportionalConstant,
-                this.integralConstant,
-                this.derivativeConstant,
-                velocityConstant,
-                accelerationConstant,
-                staticConstant
-        );
-    }
-
-    public boolean hasMotionMagic() {
-        return Double.isFinite(velocityConstant) && Double.isFinite(accelerationConstant) && Double.isFinite(staticConstant);
+    public void ensureHasPidConstants() {
+        if (!Double.isFinite(proportionalConstant) || !Double.isFinite(integralConstant) || !Double.isFinite(derivativeConstant)) {
+            throw new IllegalArgumentException("You must define PID parameter for a TalonFXSteerConfiguration using .withPidConstants()");
+        }
     }
 }

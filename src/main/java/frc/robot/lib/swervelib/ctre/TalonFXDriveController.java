@@ -8,6 +8,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 
+import frc.robot.lib.TalonFXUtils;
 import frc.robot.lib.swervelib.DriveController;
 import frc.robot.lib.swervelib.GearRatio;
 
@@ -47,7 +48,7 @@ public final class TalonFXDriveController implements DriveController {
         motorConfiguration.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         motorConfiguration.Feedback.withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor);
 
-        motor.getConfigurator().apply(motorConfiguration);
+        TalonFXUtils.throwIfError(motor.getConfigurator().apply(motorConfiguration));
     }
 
     @Override
@@ -58,7 +59,7 @@ public final class TalonFXDriveController implements DriveController {
 
     @Override
     public void setClosedLoopSpeed(double speedMS) {
-        motor.setControl(new VelocityVoltage(   speedMS / metersPerRotation));
+        motor.setControl(new VelocityVoltage(speedMS / metersPerRotation));
         referenceSpeedMS = speedMS;
     }
 

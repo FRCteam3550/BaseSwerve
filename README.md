@@ -1,7 +1,11 @@
 # BaseSwerve
 ​
-**Basic Swerve Code for a Swerve Module using Falcon, Neo, or Kraken Motors, a CTRE CANCoder, and a NAVX Gyro**
-This code was designed with Swerve Drive Specialties MK4 style modules in mind, but should be easily adaptable to other styles of modules.
+**Basic Swerve Code for a Swerve Module supporting TalonFX and SparkMax based Motors, CTRE CANCoder and Rev absolute encoders, and NAVX Gyro**
+This code is modular and could be adapted to any other hardware easily (see "Supporting other type of hardware" below).
+It comes with 2 example of drivetrains:
+
+- one based on Krakens and CANCoders.
+- a MaxSwerve one with Neos.
 ​
 ## Basic configuration
 ----
@@ -49,6 +53,10 @@ The following things must be adjusted to your robot and module's specific parame
     );
 ```
 ​
+0. Verify the direction of all angles. A positive angle should be anti-clockwise. Angle to verify: gyro, absolute encoders, motor encoders. Manually turn the robot or the wheel to verify. Adjust inversions:
+   - Gyro: adjust sign in the drivetrain's `getGyroscopeRotation()` method.
+   - Absolute angle: in the `AbsoluteEncoderConfiguration`.
+   - Drive or steer motor encoders: in the `GearRatio`. 
 1. Each of your module's component CAN IDs and initial angle. Set initial angle to 0 to start with, and then follow below instructions for measuring initial angles.
 2. Gear ratios and wheel circumference. Constants for Swerve Drive Specialties MK4 L1 to L4 are already given. For other setups, create a `new GearRatio()` with approriate values. This is used for steer control and odometry.
 3. Type of drive motor controller and encoder in each module (`TalonFXDriveConfiguration` and `SparkMaxDriveConfiguration` are built in, you can create others).
@@ -65,6 +73,8 @@ Then, make sure to setup telemetry, and in particular, make sure to display, for
 * The steer encoder's angle, as well as its PID set point, through `swerveDrive.getSteerAngle(module)` and `swerveDrive.getSteerReferenceAngle(module)`.
 * The drive wheel speed, through `swerveDrive.getDriveSpeedMS(module)`
 ​
+Note: the SparkMax will require 2 restart of the robot code for the initial angles to be registered initially.
+
 ### Measuring and adjusting parameters
 ​
 #### 1 - Initial angles
@@ -119,7 +129,14 @@ Note that in this case, a decent feed forward gain will be computed for you from
 ```java
 new TalonFXDriveConfiguration().withPIDConstants(DRIVESPEED_FF, DRIVESPEED_P, DRIVESPEED_I, DRIVESPEED_D)
 ```
-​
+
+## Supporting other type of hardware
+----
+
+- For supporting a new motor controller for the "drive" motor, implement a new `DriveConfiguration` / `DriveController` pair.
+- For supporting a new motor controller for the "steer" motor, implement a new `SteerConfiguration` / `SteerController` pair.
+- For supporting a new absolute encoder, implement a new `AbsoluteEncoderConfiguration` / `AbsoluteEncoder` pair.
+
 ## Credits
 ----
 ​

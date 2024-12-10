@@ -1,6 +1,9 @@
 package frc.robot.lib.swervelib.rev;
 
+import frc.robot.lib.swervelib.AbsoluteEncoder;
+import frc.robot.lib.swervelib.GearRatio;
 import frc.robot.lib.swervelib.SteerConfiguration;
+import frc.robot.lib.swervelib.SteerController;
 
 public class SparkMaxSteerConfiguration implements SteerConfiguration{
     private static final double DEFAULT_NOMINAL_VOLTAGE = 12;
@@ -33,6 +36,10 @@ public class SparkMaxSteerConfiguration implements SteerConfiguration{
                 Double.NaN,
                 Double.NaN
         );
+    }
+
+    public SteerController createSteerController(int motorCanId, GearRatio gearRatio, AbsoluteEncoder absoluteEncoder) {
+        return new SparkMaxSteerController(motorCanId, this, gearRatio, absoluteEncoder);
     }
 
     public boolean hasVoltageCompensation() {
@@ -73,7 +80,9 @@ public class SparkMaxSteerConfiguration implements SteerConfiguration{
         );
     }
 
-    public boolean hasPidConstants() {
-        return Double.isFinite(proportionalConstant) && Double.isFinite(integralConstant) && Double.isFinite(derivativeConstant);
+    public void ensureHasPidConstants() {
+        if (!Double.isFinite(proportionalConstant) || !Double.isFinite(integralConstant) || !Double.isFinite(derivativeConstant)) {
+            throw new IllegalArgumentException("You must define PID parameter for a SparkMaxSteerConfiguration using .withPidConstants()");
+        }
     }
 }

@@ -1,10 +1,9 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+package frc.robot.lib.swervelib.ctre;
 
-package frc.robot.lib.swervelib;
+import frc.robot.lib.swervelib.AbsoluteEncoder;
+import frc.robot.lib.swervelib.AbsoluteEncoderConfiguration;
+import frc.robot.lib.swervelib.DiscreetAngle;
 
-/** Add your docs here. */
 public class CANCoderAbsoluteEncoderConfiguration implements AbsoluteEncoderConfiguration{
     public static final int DEFAULT_READING_UPDATE_PERIOD_MS = 100;
     public final int readingUpdatePeriodMs;
@@ -17,4 +16,7 @@ public class CANCoderAbsoluteEncoderConfiguration implements AbsoluteEncoderConf
         this(DEFAULT_READING_UPDATE_PERIOD_MS);
     }
     
+    public AbsoluteEncoder createAbsoluteEncoder(int encoderCanId, DiscreetAngle alignAngle) {
+        return new CANCoderAbsoluteEncoder(encoderCanId, alignAngle, this);
+    }
 }

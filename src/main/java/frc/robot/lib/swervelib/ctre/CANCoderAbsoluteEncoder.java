@@ -5,8 +5,8 @@ import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 
+import frc.robot.lib.TalonFXUtils;
 import frc.robot.lib.swervelib.AbsoluteEncoder;
-import frc.robot.lib.swervelib.CANCoderAbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.DiscreetAngle;
 
 public class CANCoderAbsoluteEncoder implements AbsoluteEncoder {
@@ -21,9 +21,9 @@ public class CANCoderAbsoluteEncoder implements AbsoluteEncoder {
         config.MagnetSensor.SensorDirection = COUNTER_CLOCKWISE;
 
         encoder = new CANcoder(CANId);
-        encoder.getConfigurator().apply(config);
+        TalonFXUtils.throwIfError(encoder.getConfigurator().apply(config));
         // encoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, configuration.readingUpdatePeriodMs, TIMEOUT_MS);
-        encoder.getPosition().setUpdateFrequency(TIMEOUT_MS); //TODO
+        TalonFXUtils.throwIfError(encoder.getPosition().setUpdateFrequency(TIMEOUT_MS)); //TODO
     }
 
     @Override
