@@ -19,7 +19,6 @@ public final class SparkMaxDriveController implements DriveController {
 
     public SparkMaxDriveController(int motorCanId, SparkMaxDriveConfiguration configuration, GearRatio gearRatio, double maxSpeedMS) {
         motor = SparkMaxUtils.getController(motorCanId); // Already reset to factory defaults
-        SparkMaxUtils.throwIfError(motor.clearFaults());
         motor.setInverted(gearRatio.driveInverted);
         SparkMaxUtils.throwIfError(motor.setSmartCurrentLimit(38));
 

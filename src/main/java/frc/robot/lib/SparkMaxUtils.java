@@ -23,6 +23,7 @@ public class SparkMaxUtils {
     
         var sparkMax = new CANSparkMax(sparkMaxCanId, CANSparkLowLevel.MotorType.kBrushless);
         sparkMax.restoreFactoryDefaults();
+        SparkMaxUtils.throwIfError(sparkMax.clearFaults());
         sparkMaxes.put(sparkMaxCanId, sparkMax);
         return sparkMax;
     }

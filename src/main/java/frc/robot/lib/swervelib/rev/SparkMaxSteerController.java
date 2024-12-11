@@ -32,7 +32,6 @@ public final class SparkMaxSteerController implements SteerController {
         this.absoluteEncoder = absoluteEncoder;
 
         motor = SparkMaxUtils.getController(motorCanId); // Already reset to factory defaults
-        SparkMaxUtils.throwIfError(motor.clearFaults());
         SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus0, 100));
         SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus1, 20));
         SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus2, 20));
