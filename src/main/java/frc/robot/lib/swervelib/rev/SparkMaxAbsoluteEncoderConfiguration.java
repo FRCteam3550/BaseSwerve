@@ -4,7 +4,7 @@ import frc.robot.lib.swervelib.AbsoluteEncoder;
 import frc.robot.lib.swervelib.AbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.DiscreetAngle;
 
-public class SparkMaxAbsoluteEncoderConfiguration implements AbsoluteEncoderConfiguration{
+public class SparkMaxAbsoluteEncoderConfiguration implements AbsoluteEncoderConfiguration {
     public static final boolean DEFAULT_INVERTED = false;
     public final boolean inverted;
 
