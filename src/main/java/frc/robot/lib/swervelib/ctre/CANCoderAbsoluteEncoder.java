@@ -1,7 +1,6 @@
 package frc.robot.lib.swervelib.ctre;
 
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 
@@ -16,7 +15,7 @@ public class CANCoderAbsoluteEncoder implements AbsoluteEncoder {
 
     public CANCoderAbsoluteEncoder(int CANId, DiscreetAngle alignAngle, CANCoderAbsoluteEncoderConfiguration configuration) {
         CANcoderConfiguration config = new CANcoderConfiguration();
-        config.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
+        config.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
         config.MagnetSensor.MagnetOffset = -alignAngle.degrees() / 360.0;
         config.MagnetSensor.SensorDirection = COUNTER_CLOCKWISE;
 
