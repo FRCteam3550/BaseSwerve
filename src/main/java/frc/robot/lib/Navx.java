@@ -1,7 +1,6 @@
 package frc.robot.lib;
 
-import com.kauailabs.navx.frc.AHRS;
-import edu.wpi.first.wpilibj.SPI;
+import com.studica.frc.AHRS;
 import frc.robot.Robot;
 
 public class Navx {
@@ -12,7 +11,7 @@ public class Navx {
      * terminée, donc j'attends jusqu'à ce qu'une valeur différente de 0 apparaisse.
      */
     public static AHRS newReadyNavx() {
-        var navx = new AHRS(SPI.Port.kMXP, (byte)200);
+        var navx = new AHRS(AHRS.NavXComType.kMXP_SPI);
         if (Robot.isReal()) {
             while (Math.abs(navx.getYaw()) < EPSILON) {
                 try {

@@ -1,13 +1,13 @@
 package frc.robot.lib.swervelib.rev;
 
-import com.revrobotics.CANSparkMax;
-
-import com.revrobotics.CANSparkBase;
-
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkPIDController;
-
-import com.revrobotics.CANSparkLowLevel;
+import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import frc.robot.lib.MathUtils;
 import frc.robot.lib.SparkMaxUtils;
@@ -20,8 +20,9 @@ import frc.robot.lib.swervelib.SteerController;
 
 public final class SparkMaxSteerController implements SteerController {
     private static final long SETTINGS_APPLIED_WAIT_TIMEOUT_MS = 500;
-    private final CANSparkMax motor;
-    private final SparkPIDController pidController;
+    private final SparkMax motor;
+    private final SparkClosedLoopController pidController;
+        private final SparkMaxConfig config = new SparkMaxConfig();
     private final RelativeEncoder motorEncoder;
     private final AbsoluteEncoder absoluteEncoder;
 
@@ -32,35 +33,35 @@ public final class SparkMaxSteerController implements SteerController {
         this.absoluteEncoder = absoluteEncoder;
 
         motor = SparkMaxUtils.getController(motorCanId); // Already reset to factory defaults
-        SparkMaxUtils.throwIfError(motor.clearFaults());
-        SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus0, 100));
-        SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus1, 20));
-        SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus2, 20));
-        SparkMaxUtils.throwIfError(motor.setIdleMode(CANSparkMax.IdleMode.kBrake));
-        motor.setInverted(!gearRatio.steerInverted);
-        SparkMaxUtils.throwIfError(motor.setSmartCurrentLimit(38));
+        config.signals.primaryEncoderPositionPeriodMs(20);
+        config.idleMode(IdleMode.kBrake);
+        config.inverted(true);
+        config.smartCurrentLimit(38);
         if (steerConfiguration.hasVoltageCompensation()) {
-            SparkMaxUtils.throwIfError(motor.enableVoltageCompensation(steerConfiguration.nominalVoltage));
+           config.voltageCompensation(steerConfiguration.nominalVoltage);
         }
         if (steerConfiguration.hasCurrentLimit()) {
-            SparkMaxUtils.throwIfError(motor.setSmartCurrentLimit((int) Math.round(steerConfiguration.currentLimit)));
+            config.smartCurrentLimit((int)steerConfiguration.currentLimit);
         }
 
         motorEncoder = motor.getEncoder();
         double positionToDegreesRatio = 360 * gearRatio.steerMotorToMechanismReduction;
-        SparkMaxUtils.throwIfError(motorEncoder.setPositionConversionFactor(positionToDegreesRatio));        
+        config.absoluteEncoder.positionConversionFactor(positionToDegreesRatio);    
         SystemUtils.waitUntil(
             "setPositionConversionFactor for steer encoder " + motorCanId,
             SETTINGS_APPLIED_WAIT_TIMEOUT_MS,
-            () -> MathUtils.areApproxEqual(positionToDegreesRatio, motorEncoder.getPositionConversionFactor())
+            () -> MathUtils.areApproxEqual(positionToDegreesRatio, motor.configAccessor.absoluteEncoder.getPositionConversionFactor())
         );
         SparkMaxUtils.throwIfError(motorEncoder.setPosition(absoluteEncoder.getAbsoluteAngle().degrees()));
         
-        pidController = motor.getPIDController();
-        SparkMaxUtils.throwIfError(pidController.setP(steerConfiguration.proportionalConstant));
-        SparkMaxUtils.throwIfError(pidController.setI(steerConfiguration.integralConstant));
-        SparkMaxUtils.throwIfError(pidController.setD(steerConfiguration.derivativeConstant));
-        SparkMaxUtils.throwIfError(motor.burnFlash());
+        pidController = motor.getClosedLoopController();
+        config.closedLoop.pid(
+            steerConfiguration.proportionalConstant, 
+            steerConfiguration.integralConstant, 
+            steerConfiguration.derivativeConstant
+        );
+        SparkMaxUtils.throwIfError(motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+        SparkMaxUtils.throwIfError(motor.clearFaults());
     }
 
     @Override
@@ -75,7 +76,7 @@ public final class SparkMaxSteerController implements SteerController {
             motor.stopMotor();
         }
         else {
-            pidController.setReference(referenceAngle.degrees(), CANSparkBase.ControlType.kPosition);
+            pidController.setReference(referenceAngle.degrees(), SparkBase.ControlType.kPosition);
         }
     }
 

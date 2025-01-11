@@ -17,7 +17,7 @@ import frc.robot.lib.swervelib.ctre.CANCoderAbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXDriveConfiguration;
 import frc.robot.lib.swervelib.ctre.TalonFXSteerConfiguration;
 
-import com.kauailabs.navx.frc.AHRS;
+import com.studica.frc.AHRS;
 
 public class KrakenMk4Drivetrain extends SubsystemBase {
     private static final int FRONT_LEFT_MODULE_DRIVE_MOTOR_ID = 3;

@@ -19,7 +19,7 @@ public final class TalonFXSteerController implements SteerController {
     private final TalonFX motor;
     private final double steerMotorToMechanismReduction;
     private final AbsoluteEncoder absoluteEncoder;
-    private final PositionVoltage positionVoltage = new PositionVoltage(0, 0, false, 0, 0, false, false, false);
+    private final PositionVoltage positionVoltage = new PositionVoltage(0);
 
     private ContinuousAngle referenceAngle = ContinuousAngle.fromDegrees(0.0);
 

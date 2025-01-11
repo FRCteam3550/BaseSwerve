@@ -22,7 +22,7 @@ import frc.robot.lib.swervelib.rev.SparkMaxAbsoluteEncoderConfiguration;
 import frc.robot.lib.swervelib.rev.SparkMaxDriveConfiguration;
 import frc.robot.lib.swervelib.rev.SparkMaxSteerConfiguration;
 
-import com.kauailabs.navx.frc.AHRS;
+import com.studica.frc.AHRS;
 
 public class MaxSwerveDrivetrain extends SubsystemBase {
     private static final int FRONT_LEFT_MODULE_DRIVE_MOTOR_ID = 8;

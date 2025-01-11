@@ -1,42 +1,42 @@
 package frc.robot.lib.swervelib.rev;
 
-import com.revrobotics.CANSparkLowLevel;
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkBase;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkPIDController;
+import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import frc.robot.lib.SparkMaxUtils;
 import frc.robot.lib.swervelib.DriveController;
 import frc.robot.lib.swervelib.GearRatio;
 
 public final class SparkMaxDriveController implements DriveController {
-    private final CANSparkMax motor;
-    private final SparkPIDController pidController;
+    private final SparkMax motor;
+    private final SparkClosedLoopController pidController;
+    private final SparkMaxConfig config = new SparkMaxConfig();
     private final RelativeEncoder encoder;
     private double referenceSpeedMS = 0;
     private double metersPerMotorRotation;
 
     public SparkMaxDriveController(int motorCanId, SparkMaxDriveConfiguration configuration, GearRatio gearRatio, double maxSpeedMS) {
         motor = SparkMaxUtils.getController(motorCanId); // Already reset to factory defaults
-        SparkMaxUtils.throwIfError(motor.clearFaults());
-        motor.setInverted(gearRatio.driveInverted);
-        SparkMaxUtils.throwIfError(motor.setSmartCurrentLimit(38));
+        config.inverted(true);
+        config.smartCurrentLimit(38);
 
         // Setup voltage compensation
         if (configuration.hasVoltageCompensation()) {
-            SparkMaxUtils.throwIfError(motor.enableVoltageCompensation(configuration.nominalVoltage));
+            config.voltageCompensation(configuration.nominalVoltage);
         }
 
         if (configuration.hasCurrentLimit()) {
-            SparkMaxUtils.throwIfError(motor.setSmartCurrentLimit((int)configuration.currentLimit));
+            config.smartCurrentLimit((int)configuration.currentLimit);
         }
-
-        SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus0, 100));
-        SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus1, 20));
-        SparkMaxUtils.throwIfError(motor.setPeriodicFramePeriod(CANSparkLowLevel.PeriodicFrame.kStatus2, 20));
+        config.signals.primaryEncoderPositionPeriodMs(20);
         // Set neutral mode to brake
-        SparkMaxUtils.throwIfError(motor.setIdleMode(CANSparkMax.IdleMode.kBrake));
+        config.idleMode(IdleMode.kBrake);
 
         // Setup absoluteEncoder
         encoder = motor.getEncoder();
@@ -45,10 +45,10 @@ public final class SparkMaxDriveController implements DriveController {
         } else {
             metersPerMotorRotation = gearRatio.wheelCircumferenceM * gearRatio.driveReduction;
         }
-        SparkMaxUtils.throwIfError(encoder.setPositionConversionFactor(metersPerMotorRotation)); // Unit by default: motor rotations.
-        SparkMaxUtils.throwIfError(encoder.setVelocityConversionFactor(metersPerMotorRotation / 60.0)); // Unit by default: motor rotations per minute.
+        config.absoluteEncoder.positionConversionFactor(metersPerMotorRotation); // Unit by default: motor rotations.
+        config.absoluteEncoder.velocityConversionFactor(metersPerMotorRotation / 60.0); // Unit by default: motor rotations per minute.
 
-        pidController = motor.getPIDController();
+        pidController = motor.getClosedLoopController();
 
         if (configuration.hasPidConstants()) {
             if (Double.isNaN(configuration.feedForwardConstant)) {
@@ -56,16 +56,18 @@ public final class SparkMaxDriveController implements DriveController {
                 // Normalized: -1 to 1
                 // Native: RPS (velocity) Rotations (position)
                 var maxRotationsPerMinutes = maxSpeedMS / metersPerMotorRotation * 60;
-                SparkMaxUtils.throwIfError(pidController.setFF(1 / maxRotationsPerMinutes));
+                config.closedLoop.velocityFF(1 / maxRotationsPerMinutes);
             } else {
-                SparkMaxUtils.throwIfError(pidController.setFF(configuration.feedForwardConstant));
+                config.closedLoop.velocityFF(configuration.feedForwardConstant);
             }
-            SparkMaxUtils.throwIfError(pidController.setP(configuration.proportionalConstant));
-            SparkMaxUtils.throwIfError(pidController.setI(configuration.integralConstant));
-            SparkMaxUtils.throwIfError(pidController.setD(configuration.derivativeConstant));
+            config.closedLoop.pid(
+                configuration.proportionalConstant, 
+                configuration.integralConstant, 
+                configuration.derivativeConstant
+            );
         }
-
-        SparkMaxUtils.throwIfError(motor.burnFlash());
+        SparkMaxUtils.throwIfError(motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+        SparkMaxUtils.throwIfError(motor.clearFaults());
     }
 
     @Override
@@ -76,7 +78,7 @@ public final class SparkMaxDriveController implements DriveController {
     @Override
     public void setClosedLoopSpeed(double speedMS) {
         referenceSpeedMS = speedMS;
-        SparkMaxUtils.throwIfError(pidController.setReference(speedMS, CANSparkBase.ControlType.kVelocity));
+        SparkMaxUtils.throwIfError(pidController.setReference(speedMS, SparkBase.ControlType.kVelocity));
     }
 
     @Override
