@@ -33,7 +33,6 @@ public final class SparkMaxSteerController implements SteerController {
         this.absoluteEncoder = absoluteEncoder;
 
         motor = SparkMaxUtils.getController(motorCanId); // Already reset to factory defaults
-        SparkMaxUtils.throwIfREVLibError(motor.clearFaults());
         config.signals.primaryEncoderPositionPeriodMs(20);
         config.idleMode(IdleMode.kBrake);
         config.inverted(true);
@@ -53,7 +52,7 @@ public final class SparkMaxSteerController implements SteerController {
             SETTINGS_APPLIED_WAIT_TIMEOUT_MS,
             () -> MathUtils.areApproxEqual(positionToDegreesRatio, motor.configAccessor.absoluteEncoder.getPositionConversionFactor())
         );
-        SparkMaxUtils.throwIfREVLibError(motorEncoder.setPosition(absoluteEncoder.getAbsoluteAngle().degrees()));
+        SparkMaxUtils.throwIfError(motorEncoder.setPosition(absoluteEncoder.getAbsoluteAngle().degrees()));
         
         pidController = motor.getClosedLoopController();
         config.closedLoop.pid(
@@ -61,7 +60,8 @@ public final class SparkMaxSteerController implements SteerController {
             steerConfiguration.integralConstant, 
             steerConfiguration.derivativeConstant
         );
-        SparkMaxUtils.throwIfREVLibError(motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+        SparkMaxUtils.throwIfError(motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+        SparkMaxUtils.throwIfError(motor.clearFaults());
     }
 
     @Override

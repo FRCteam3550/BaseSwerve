@@ -23,7 +23,6 @@ public final class SparkMaxDriveController implements DriveController {
 
     public SparkMaxDriveController(int motorCanId, SparkMaxDriveConfiguration configuration, GearRatio gearRatio, double maxSpeedMS) {
         motor = SparkMaxUtils.getController(motorCanId); // Already reset to factory defaults
-        SparkMaxUtils.throwIfREVLibError(motor.clearFaults());
         config.inverted(true);
         config.smartCurrentLimit(38);
 
@@ -67,7 +66,8 @@ public final class SparkMaxDriveController implements DriveController {
                 configuration.derivativeConstant
             );
         }
-        SparkMaxUtils.throwIfREVLibError(motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+        SparkMaxUtils.throwIfError(motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+        SparkMaxUtils.throwIfError(motor.clearFaults());
     }
 
     @Override
@@ -78,7 +78,7 @@ public final class SparkMaxDriveController implements DriveController {
     @Override
     public void setClosedLoopSpeed(double speedMS) {
         referenceSpeedMS = speedMS;
-        SparkMaxUtils.throwIfREVLibError(pidController.setReference(speedMS, SparkBase.ControlType.kVelocity));
+        SparkMaxUtils.throwIfError(pidController.setReference(speedMS, SparkBase.ControlType.kVelocity));
     }
 
     @Override

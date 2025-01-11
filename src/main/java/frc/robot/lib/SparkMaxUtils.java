@@ -10,7 +10,7 @@ import com.revrobotics.spark.SparkLowLevel;
 public class SparkMaxUtils {
     private static final Map<Integer, SparkMax> sparkMaxes = new HashMap<>();
 
-    public static final void throwIfREVLibError(REVLibError error) {
+    public static final void throwIfError(REVLibError error) {
         if (REVLibError.kError.equals(error)) {
             throw new RuntimeException(String.format("Error: %s", error.name()));
         }
