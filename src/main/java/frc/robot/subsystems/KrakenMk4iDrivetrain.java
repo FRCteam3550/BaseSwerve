@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.lib.Navx;
@@ -81,42 +82,42 @@ public class KrakenMk4iDrivetrain extends SubsystemBase {
 
     private final AHRS navx = Navx.newReadyNavx(); // NavX connected over MXP
 
-    private final SwerveDrive swerveDrive = new SwerveDrive(
-        new SwerveModuleConfiguration( 
-            FRONT_LEFT_MODULE_DRIVE_MOTOR_ID,
-            FRONT_LEFT_MODULE_STEER_MOTOR_ID, 
-            FRONT_LEFT_MODULE_STEER_ENCODER_ID, 
-            FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE
-        ), 
-        new SwerveModuleConfiguration( 
-            FRONT_RIGHT_MODULE_DRIVE_MOTOR_ID, 
-            FRONT_RIGHT_MODULE_STEER_MOTOR_ID,
-            FRONT_RIGHT_MODULE_STEER_ENCODER_ID, 
-            FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE
-        ), 
-        new SwerveModuleConfiguration( 
-            BACK_LEFT_MODULE_DRIVE_MOTOR_ID,
-            BACK_LEFT_MODULE_STEER_MOTOR_ID, 
-            BACK_LEFT_MODULE_STEER_ENCODER_ID,
-            BACK_LEFT_MODULE_STEER_ALIGN_ANGLE
-        ), 
-        new SwerveModuleConfiguration(
-            BACK_RIGHT_MODULE_DRIVE_MOTOR_ID,
-            BACK_RIGHT_MODULE_STEER_MOTOR_ID,  
-            BACK_RIGHT_MODULE_STEER_ENCODER_ID, 
-            BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE
-        ), 
-        SdsGearRatios.MK4i_L3,
-        new TalonFXDriveConfiguration(),
-        new TalonFXSteerConfiguration()
-            .withPidConstants(STEER_POS_P, STEER_POS_I, STEER_POS_D), 
-        new CANCoderAbsoluteEncoderConfiguration(),
-        new SwerveDriveConfiguration(
-            MAX_SPEED_MS, 
-            KINEMATICS, 
-            () -> getGyroscopeRotation()
-        )
-    );
+    // private final SwerveDrive swerveDrive = new SwerveDrive(
+    //     new SwerveModuleConfiguration( 
+    //         FRONT_LEFT_MODULE_DRIVE_MOTOR_ID,
+    //         FRONT_LEFT_MODULE_STEER_MOTOR_ID, 
+    //         FRONT_LEFT_MODULE_STEER_ENCODER_ID, 
+    //         FRONT_LEFT_MODULE_STEER_ALIGN_ANGLE
+    //     ), 
+    //     new SwerveModuleConfiguration( 
+    //         FRONT_RIGHT_MODULE_DRIVE_MOTOR_ID, 
+    //         FRONT_RIGHT_MODULE_STEER_MOTOR_ID,
+    //         FRONT_RIGHT_MODULE_STEER_ENCODER_ID, 
+    //         FRONT_RIGHT_MODULE_STEER_ALIGN_ANGLE
+    //     ), 
+    //     new SwerveModuleConfiguration( 
+    //         BACK_LEFT_MODULE_DRIVE_MOTOR_ID,
+    //         BACK_LEFT_MODULE_STEER_MOTOR_ID, 
+    //         BACK_LEFT_MODULE_STEER_ENCODER_ID,
+    //         BACK_LEFT_MODULE_STEER_ALIGN_ANGLE
+    //     ), 
+    //     new SwerveModuleConfiguration(
+    //         BACK_RIGHT_MODULE_DRIVE_MOTOR_ID,
+    //         BACK_RIGHT_MODULE_STEER_MOTOR_ID,  
+    //         BACK_RIGHT_MODULE_STEER_ENCODER_ID, 
+    //         BACK_RIGHT_MODULE_STEER_ALIGN_ANGLE
+    //     ), 
+    //     SdsGearRatios.MK4i_L3,
+    //     new TalonFXDriveConfiguration(),
+    //     new TalonFXSteerConfiguration()
+    //         .withPidConstants(STEER_POS_P, STEER_POS_I, STEER_POS_D), 
+    //     new CANCoderAbsoluteEncoderConfiguration(),
+    //     new SwerveDriveConfiguration(
+    //         MAX_SPEED_MS, 
+    //         KINEMATICS, 
+    //         () -> getGyroscopeRotation()
+    //     )
+    // );
 
     private final CommandXboxController gamepad;
 
@@ -136,10 +137,10 @@ public class KrakenMk4iDrivetrain extends SubsystemBase {
             .withSize(2, 4)
             .withPosition(module.index * 2, 0);
             
-        layout.addDouble("Drive speed MS", () -> swerveDrive.getDriveSpeedMS(module));
-        layout.addDouble("Steer angle", () -> swerveDrive.getSteerAngle(module).degrees());
-        layout.addDouble("Steer reference angle", () -> swerveDrive.getSteerReferenceAngle(module).degrees());
-        layout.addDouble("Drive position ticks", () -> swerveDrive.getDrivePositionNativeUnits(module));
+        // layout.addDouble("Drive speed MS", () -> swerveDrive.getDriveSpeedMS(module));
+        // layout.addDouble("Steer angle", () -> swerveDrive.getSteerAngle(module).degrees());
+        // layout.addDouble("Steer reference angle", () -> swerveDrive.getSteerReferenceAngle(module).degrees());
+        // layout.addDouble("Drive position ticks", () -> swerveDrive.getDrivePositionNativeUnits(module));
     }
 
     /**
@@ -158,17 +159,18 @@ public class KrakenMk4iDrivetrain extends SubsystemBase {
                 getGyroscopeRotation()
             );
 
-            swerveDrive.setOpenLoopSpeed(chassisSpeeds);
-        })
-        .andThen(() -> swerveDrive.stop());
+            // swerveDrive.setOpenLoopSpeed(chassisSpeeds);
+        });
+        // .andThen(() -> swerveDrive.stop());
     }
 
     public Command steerAllWheelsAtRestTo(Rotation2d angle) {
-        return run(() -> swerveDrive.steerAllWheelsAtRestTo(angle));
+        // return run(() -> swerveDrive.steerAllWheelsAtRestTo(angle));
+        return Commands.print("fais rien");
     }
 
     @Override
     public void periodic() {
-        swerveDrive.periodic();
+        // swerveDrive.periodic();
     }
 }
